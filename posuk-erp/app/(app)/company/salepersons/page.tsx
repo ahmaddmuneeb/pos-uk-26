@@ -12,6 +12,7 @@ import { Input } from "@/components/forms/Input";
 import { Select } from "@/components/forms/Select";
 import { KeyValue, ExportActions } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import apiClient from "@/lib/apiClient";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRights } from "@/components/auth/RightsContext";
@@ -57,41 +58,30 @@ export default function SalePersonsPage() {
 
   const addMutation = useMutation({
     mutationFn: (data: typeof emptyForm) =>
-      fetch("/api/salepersons", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: data.name,
-          designation: data.designation || undefined,
-          region: data.region || undefined,
-          commission: parseFloat(data.commission || "0"),
-          status: data.status,
-        }),
-      }).then(async (r) => { if (!r.ok) throw new Error((await r.json()).error); }),
+      apiClient.post("/api/salepersons", {
+        name: data.name,
+        designation: data.designation || undefined,
+        region: data.region || undefined,
+        commission: parseFloat(data.commission || "0"),
+        status: data.status,
+      }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["salepersons"] }); setShowAdd(false); setForm({ ...emptyForm }); },
   });
 
   const editMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: typeof emptyForm }) =>
-      fetch(`/api/salepersons/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: data.name,
-          designation: data.designation || undefined,
-          region: data.region || undefined,
-          commission: parseFloat(data.commission || "0"),
-          status: data.status,
-        }),
-      }).then(async (r) => { if (!r.ok) throw new Error((await r.json()).error); }),
+      apiClient.patch(`/api/salepersons/${id}`, {
+        name: data.name,
+        designation: data.designation || undefined,
+        region: data.region || undefined,
+        commission: parseFloat(data.commission || "0"),
+        status: data.status,
+      }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["salepersons"] }); setEditing(null); setForm({ ...emptyForm }); },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) =>
-      fetch(`/api/salepersons/${id}`, { method: "DELETE" }).then(async (r) => {
-        if (!r.ok) throw new Error((await r.json()).error);
-      }),
+    mutationFn: (id: string) => apiClient.delete(`/api/salepersons/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["salepersons"] }); setConfirmDelete(null); },
   });
 

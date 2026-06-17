@@ -5,6 +5,7 @@ import { BrandMark } from "@/components/core/BrandMark";
 import { Button } from "@/components/core/Button";
 import { Input } from "@/components/forms/Input";
 import { Field } from "@/components/forms/Field";
+import apiClient from "@/lib/apiClient";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -17,19 +18,10 @@ export default function ForgotPasswordPage() {
     setBusy(true);
     setError("");
     try {
-      const res = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (!res.ok) {
-        const j = await res.json();
-        setError(j.error ?? "Failed to send email. Please try again.");
-      } else {
-        setSent(true);
-      }
-    } catch {
-      setError("Something went wrong. Please try again.");
+      await apiClient.post("/api/auth/forgot-password", { email });
+      setSent(true);
+    } catch (e: unknown) {
+      setError((e as Error).message || "Failed to send email. Please try again.");
     } finally {
       setBusy(false);
     }

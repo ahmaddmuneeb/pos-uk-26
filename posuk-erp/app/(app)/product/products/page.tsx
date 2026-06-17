@@ -12,6 +12,7 @@ import { Input } from "@/components/forms/Input";
 import { Select } from "@/components/forms/Select";
 import { ExportActions, KeyValue } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import apiClient from "@/lib/apiClient";
 import { Eye, Pencil, Trash2, PackagePlus, ToggleLeft, ToggleRight } from "lucide-react";
 import { toast } from "sonner";
 import { useRights } from "@/components/auth/RightsContext";
@@ -122,18 +123,7 @@ export default function ProductsPage() {
     : allSubs;
 
   const add = useMutation({
-    mutationFn: (body: unknown) =>
-      fetch("/api/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      }).then(async (r) => {
-        if (!r.ok) {
-          const e = await r.json();
-          throw new Error(e.error || "Failed to save product");
-        }
-        return r.json();
-      }),
+    mutationFn: (body: unknown) => apiClient.post("/api/products", body).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products-all"] });
       setForm(EMPTY_FORM);
@@ -144,17 +134,7 @@ export default function ProductsPage() {
 
   const update = useMutation({
     mutationFn: ({ id, body }: { id: string; body: unknown }) =>
-      fetch(`/api/products/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      }).then(async (r) => {
-        if (!r.ok) {
-          const e = await r.json();
-          throw new Error(e.error || "Failed to update product");
-        }
-        return r.json();
-      }),
+      apiClient.patch(`/api/products/${id}`, body).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products-all"] });
       setForm(EMPTY_FORM);
@@ -166,17 +146,7 @@ export default function ProductsPage() {
 
   const adjustStock = useMutation({
     mutationFn: (body: { productId: string; locationId: string; qty: number; reason?: string }) =>
-      fetch("/api/stock/adjust", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      }).then(async (r) => {
-        if (!r.ok) {
-          const e = await r.json();
-          throw new Error(e.error || "Failed to adjust stock");
-        }
-        return r.json();
-      }),
+      apiClient.post("/api/stock/adjust", body).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products-all"] });
       setAdjusting(null);
@@ -188,13 +158,7 @@ export default function ProductsPage() {
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
-      fetch(`/api/products/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active }),
-      }).then(async (r) => {
-        if (!r.ok) throw new Error((await r.json()).error || "Failed to update");
-      }),
+      apiClient.patch(`/api/products/${id}`, { active }),
     onSuccess: (_data, { active }) => {
       qc.invalidateQueries({ queryKey: ["products-all"] });
       toast.success(active ? "Product activated." : "Product deactivated.");
@@ -203,10 +167,7 @@ export default function ProductsPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) =>
-      fetch(`/api/products/${id}`, { method: "DELETE" }).then(async (r) => {
-        if (!r.ok) throw new Error((await r.json()).error || "Failed to delete");
-      }),
+    mutationFn: (id: string) => apiClient.delete(`/api/products/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["products-all"] }); setConfirmDelete(null); },
   });
 

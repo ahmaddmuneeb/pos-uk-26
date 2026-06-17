@@ -6,6 +6,7 @@ import { Button } from "@/components/core/Button";
 import { Select } from "@/components/forms/Select";
 import { Field } from "@/components/forms/Field";
 import { fetchArray } from "@/lib/fetchJson";
+import apiClient from "@/lib/apiClient";
 import { toast } from "sonner";
 import { useRights } from "@/components/auth/RightsContext";
 import { ScreenGuard } from "@/components/auth/ScreenGuard";
@@ -45,7 +46,7 @@ export default function UserRightsPage() {
   };
 
   const save = useMutation({
-    mutationFn: () => fetch("/api/rights", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ roleId, rights: effective }) }).then((r) => r.json()),
+    mutationFn: () => apiClient.post("/api/rights", { roleId, rights: effective }).then((r) => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["rights", roleId] }); setGrid({}); toast.success("Rights saved."); },
     onError: (e: Error) => toast.error(e.message),
   });

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/data-display/Badge";
 import { ListScreen } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import apiClient from "@/lib/apiClient";
 import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 type CategoryRow = {
@@ -21,23 +22,18 @@ export default function CategoriesPage() {
   });
 
   const add = useMutation({
-    mutationFn: (body: unknown) =>
-      fetch("/api/categories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-        .then((r) => { if (!r.ok) return r.json().then((e) => Promise.reject(new Error(e.error || "Failed"))); return r.json(); }),
+    mutationFn: (body: unknown) => apiClient.post("/api/categories", body).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
 
   const edit = useMutation({
     mutationFn: ({ id, data }: { id: string; data: unknown }) =>
-      fetch(`/api/categories/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
-        .then(async (r) => { if (!r.ok) throw new Error((await r.json()).error || "Failed"); return r.json(); }),
+      apiClient.patch(`/api/categories/${id}`, data).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
 
   const remove = useMutation({
-    mutationFn: (id: string) =>
-      fetch(`/api/categories/${id}`, { method: "DELETE" })
-        .then(async (r) => { if (!r.ok) throw new Error((await r.json()).error || "Failed"); }),
+    mutationFn: (id: string) => apiClient.delete(`/api/categories/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
 

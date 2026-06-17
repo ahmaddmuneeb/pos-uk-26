@@ -2,11 +2,24 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Resend } from "resend";
+import { isRateLimited, clientIp } from "@/lib/rateLimit";
+
+function esc(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 const Schema = z.object({ email: z.string().email() });
 
 export async function POST(req: Request) {
   try {
+    if (isRateLimited(`forgot-pw:${clientIp(req)}`, 5, 15 * 60 * 1000)) {
+      return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    }
     const { email } = Schema.parse(await req.json());
     const user = await db.user.findUnique({ where: { email } });
 
@@ -26,8 +39,8 @@ export async function POST(req: Request) {
         html: `
           <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:2rem">
             <h2 style="margin:0 0 1rem;font-size:1.4rem">Reset your password</h2>
-            <p style="margin:0 0 1.5rem;color:#64748b">Hi ${user.fullName}, click the button below to set a new password. This link expires in 1 hour.</p>
-            <a href="${resetUrl}" style="display:inline-block;padding:0.75rem 1.5rem;background:#22d3ee;color:#0f172a;text-decoration:none;border-radius:6px;font-weight:700">Reset password</a>
+            <p style="margin:0 0 1.5rem;color:#64748b">Hi ${esc(user.fullName)}, click the button below to set a new password. This link expires in 1 hour.</p>
+            <a href="${esc(resetUrl)}" style="display:inline-block;padding:0.75rem 1.5rem;background:#22d3ee;color:#0f172a;text-decoration:none;border-radius:6px;font-weight:700">Reset password</a>
             <p style="margin:1.5rem 0 0;font-size:0.8rem;color:#94a3b8">If you didn't request this, you can safely ignore this email.</p>
           </div>`,
       });

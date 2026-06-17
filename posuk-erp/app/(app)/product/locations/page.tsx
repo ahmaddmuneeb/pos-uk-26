@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ListScreen } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import apiClient from "@/lib/apiClient";
 import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 type LocationRow = {
@@ -19,23 +20,18 @@ export default function LocationsPage() {
   });
 
   const add = useMutation({
-    mutationFn: (body: unknown) =>
-      fetch("/api/locations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-        .then((r) => { if (!r.ok) return r.json().then((e) => Promise.reject(new Error(e.error || "Failed"))); return r.json(); }),
+    mutationFn: (body: unknown) => apiClient.post("/api/locations", body).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["locations"] }),
   });
 
   const edit = useMutation({
     mutationFn: ({ id, data }: { id: string; data: unknown }) =>
-      fetch(`/api/locations/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
-        .then(async (r) => { if (!r.ok) throw new Error((await r.json()).error || "Failed"); return r.json(); }),
+      apiClient.patch(`/api/locations/${id}`, data).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["locations"] }),
   });
 
   const remove = useMutation({
-    mutationFn: (id: string) =>
-      fetch(`/api/locations/${id}`, { method: "DELETE" })
-        .then(async (r) => { if (!r.ok) throw new Error((await r.json()).error || "Failed"); }),
+    mutationFn: (id: string) => apiClient.delete(`/api/locations/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["locations"] }),
   });
 

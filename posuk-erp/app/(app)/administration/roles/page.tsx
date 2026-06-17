@@ -7,6 +7,7 @@ import { Button } from "@/components/core/Button";
 import { Field } from "@/components/forms/Field";
 import { Input } from "@/components/forms/Input";
 import { fetchArray } from "@/lib/fetchJson";
+import apiClient from "@/lib/apiClient";
 import { toast } from "sonner";
 import { Edit2, Trash2, Plus, X, Check } from "lucide-react";
 import { useRights } from "@/components/auth/RightsContext";
@@ -42,30 +43,20 @@ export default function RolesPage() {
   const [editName, setEditName] = useState("");
 
   const create = useMutation({
-    mutationFn: (name: string) =>
-      fetch("/api/roles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) }).then(async (r) => {
-        if (!r.ok) { const j = await r.json(); throw new Error(j.error ?? "Failed to create role"); }
-        return r.json();
-      }),
+    mutationFn: (name: string) => apiClient.post("/api/roles", { name }).then((r) => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["roles"] }); setShowAdd(false); setAddName(""); toast.success("Role created."); },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const rename = useMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) =>
-      fetch(`/api/roles/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) }).then(async (r) => {
-        if (!r.ok) { const j = await r.json(); throw new Error(j.error ?? "Failed to update role"); }
-        return r.json();
-      }),
+      apiClient.patch(`/api/roles/${id}`, { name }).then((r) => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["roles"] }); setEditRole(null); toast.success("Role updated."); },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const remove = useMutation({
-    mutationFn: (id: string) =>
-      fetch(`/api/roles/${id}`, { method: "DELETE" }).then(async (r) => {
-        if (!r.ok) { const j = await r.json(); throw new Error(j.error ?? "Failed to delete role"); }
-      }),
+    mutationFn: (id: string) => apiClient.delete(`/api/roles/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["roles"] }); toast.success("Role deleted."); },
     onError: (e: Error) => toast.error(e.message),
   });

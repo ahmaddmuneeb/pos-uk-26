@@ -1,8 +1,11 @@
+"use client";
+
+import apiClient from "./apiClient";
+
 export async function fetchArray<T>(url: string): Promise<T[]> {
   try {
-    const res = await fetch(url);
-    const data = await res.json();
-    return Array.isArray(data) ? (data as T[]) : [];
+    const { data } = await apiClient.get<T[]>(url);
+    return Array.isArray(data) ? data : [];
   } catch {
     return [];
   }

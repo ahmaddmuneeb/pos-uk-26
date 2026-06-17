@@ -15,6 +15,7 @@ import { LineItems, docTotals, DocLine } from "@/components/ui/LineItems";
 import { fmt, currencySymbol } from "@/lib/currency";
 import { getCompanyInfo, invoiceDoc, openPrintWindow, InvoicePrintData } from "@/lib/printDoc";
 import { fetchArray } from "@/lib/fetchJson";
+import apiClient from "@/lib/apiClient";
 import { toast } from "sonner";
 import { Eye, Printer, Trash2, RefreshCw } from "lucide-react";
 import { useRights } from "@/components/auth/RightsContext";
@@ -120,34 +121,30 @@ export default function InvoicesPage() {
 
   // ── Mutations ─────────────────────────────────────────────────────────────
   const save = useMutation({
-    mutationFn: () => fetch("/api/invoices", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        customerId: head.customerId, salePersonId: head.salePersonId || undefined, orderId: head.orderId || undefined,
-        locationId: head.locationId, date: head.date, dueDate: head.dueDate,
-        lines: lines.filter((l) => l.productId).map((l) => ({ productId: l.productId, qty: parseInt(l.qty) || 0, rate: parseFloat(l.rate) || 0, discount: parseFloat(l.disc) || 0, vatRate: parseFloat(l.vat) || 0 })),
-      }),
-    }).then(async (r) => { if (!r.ok) throw new Error((await r.json()).error || "Failed to post invoice"); return r.json(); }),
+    mutationFn: () => apiClient.post("/api/invoices", {
+      customerId: head.customerId, salePersonId: head.salePersonId || undefined, orderId: head.orderId || undefined,
+      locationId: head.locationId, date: head.date, dueDate: head.dueDate,
+      lines: lines.filter((l) => l.productId).map((l) => ({ productId: l.productId, qty: parseInt(l.qty) || 0, rate: parseFloat(l.rate) || 0, discount: parseFloat(l.disc) || 0, vatRate: parseFloat(l.vat) || 0 })),
+    }).then((r) => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices"] }); setShow(false); reset(); toast.success("Invoice saved."); },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => fetch(`/api/invoices/${id}`, { method: "DELETE" }).then(async (r) => { if (!r.ok) throw new Error((await r.json()).error || "Failed to delete"); }),
+    mutationFn: (id: string) => apiClient.delete(`/api/invoices/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices"] }); setConfirmDelete(null); },
   });
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
-      fetch(`/api/invoices/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) })
-        .then(async (r) => { if (!r.ok) throw new Error((await r.json()).error || "Failed to update status"); }),
+      apiClient.patch(`/api/invoices/${id}`, { status }),
     onSuccess: (_data, { status }) => { qc.invalidateQueries({ queryKey: ["invoices"] }); setStatusModal(null); toast.success(`Status updated to "${status}".`); },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const loadInvoice = async (id: string): Promise<InvoicePrintData | null> => {
     setLoadingId(id);
-    try { const res = await fetch(`/api/invoices/${id}`); if (!res.ok) throw new Error((await res.json()).error || "Failed"); return await res.json(); }
+    try { const res = await apiClient.get<InvoicePrintData>(`/api/invoices/${id}`); return res.data; }
     catch (e: unknown) { toast.error((e as Error).message); return null; }
     finally { setLoadingId(null); }
   };

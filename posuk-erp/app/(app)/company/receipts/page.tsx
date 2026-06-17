@@ -14,6 +14,7 @@ import { SubHead, KeyValue, ExportActions } from "@/components/ui/ScreenHelpers"
 import { fmt, currencySymbol } from "@/lib/currency";
 import { getCompanyInfo, receiptDoc, openPrintWindow } from "@/lib/printDoc";
 import { fetchArray } from "@/lib/fetchJson";
+import apiClient from "@/lib/apiClient";
 import { Eye, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRights } from "@/components/auth/RightsContext";
@@ -82,10 +83,7 @@ export default function ReceiptsPage() {
   };
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) =>
-      fetch(`/api/receipts/${id}`, { method: "DELETE" }).then(async (r) => {
-        if (!r.ok) throw new Error((await r.json()).error || "Failed to delete");
-      }),
+    mutationFn: (id: string) => apiClient.delete(`/api/receipts/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["receipts"] });
       qc.invalidateQueries({ queryKey: ["ledger"] });
@@ -109,18 +107,12 @@ export default function ReceiptsPage() {
 
   const mutation = useMutation({
     mutationFn: (data: typeof emptyForm) =>
-      fetch("/api/receipts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customerId: data.customerId,
-          amount: parseFloat(data.amount),
-          mode: data.mode,
-          reference: data.reference || undefined,
-          date: data.date,
-        }),
-      }).then(async (r) => {
-        if (!r.ok) throw new Error((await r.json()).error);
+      apiClient.post("/api/receipts", {
+        customerId: data.customerId,
+        amount: parseFloat(data.amount),
+        mode: data.mode,
+        reference: data.reference || undefined,
+        date: data.date,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["receipts"] });

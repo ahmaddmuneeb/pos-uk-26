@@ -2,6 +2,7 @@
 import { useState, useEffect, useId } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import apiClient from "@/lib/apiClient";
 import { Input } from "@/components/forms/Input";
 import { Field } from "@/components/forms/Field";
 import { Button } from "@/components/core/Button";
@@ -45,7 +46,7 @@ export default function ProfilePage() {
 
   const { data: me, isLoading } = useQuery<Me>({
     queryKey: ["me"],
-    queryFn: () => fetch("/api/me").then((r) => r.json()),
+    queryFn: () => apiClient.get<Me>("/api/me").then((r) => r.data),
   });
 
   // ── Personal info ─────────────────────────────────────────────────────────
@@ -58,9 +59,7 @@ export default function ProfilePage() {
   }, [me]);
 
   const saveInfo = useMutation({
-    mutationFn: () =>
-      fetch("/api/me", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fullName, email }) })
-        .then(async (r) => { if (!r.ok) { const j = await r.json(); throw new Error(j.error ?? "Failed"); } return r.json(); }),
+    mutationFn: () => apiClient.patch("/api/me", { fullName, email }).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["me"] });
       setInfoSaved(true);
@@ -80,8 +79,7 @@ export default function ProfilePage() {
   const changePwd = useMutation({
     mutationFn: () => {
       if (next !== confirm) throw new Error("New passwords do not match.");
-      return fetch("/api/me/change-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currentPassword: current, newPassword: next }) })
-        .then(async (r) => { if (!r.ok) { const j = await r.json(); throw new Error(j.error ?? "Failed"); } return r.json(); });
+      return apiClient.post("/api/me/change-password", { currentPassword: current, newPassword: next }).then((r) => r.data);
     },
     onSuccess: () => {
       setCurrent(""); setNext(""); setConfirm(""); setPwdError("");

@@ -14,6 +14,7 @@ import { Textarea } from "@/components/forms/Textarea";
 import { Toolbar, SubHead, KeyValue, ExportActions } from "@/components/ui/ScreenHelpers";
 import { fmt } from "@/lib/currency";
 import { fetchArray } from "@/lib/fetchJson";
+import apiClient from "@/lib/apiClient";
 import { Eye, Pencil, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import { useToast } from "@/components/feedback/Toast";
 import { useRights } from "@/components/auth/RightsContext";
@@ -105,23 +106,17 @@ export default function CustomersPage() {
 
   const editMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: typeof emptyForm }) =>
-      fetch(`/api/customers/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: data.name,
-          contact: data.contact || undefined,
-          typeId: data.typeId,
-          phone: data.phone || undefined,
-          whatsapp: data.whatsapp || undefined,
-          email: data.email || undefined,
-          vat: data.vat || undefined,
-          city: data.city || undefined,
-          postcode: data.postcode || undefined,
-          address: data.address || undefined,
-        }),
-      }).then(async (r) => {
-        if (!r.ok) throw new Error((await r.json()).error);
+      apiClient.patch(`/api/customers/${id}`, {
+        name: data.name,
+        contact: data.contact || undefined,
+        typeId: data.typeId,
+        phone: data.phone || undefined,
+        whatsapp: data.whatsapp || undefined,
+        email: data.email || undefined,
+        vat: data.vat || undefined,
+        city: data.city || undefined,
+        postcode: data.postcode || undefined,
+        address: data.address || undefined,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["customers"] });
@@ -131,10 +126,7 @@ export default function CustomersPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) =>
-      fetch(`/api/customers/${id}`, { method: "DELETE" }).then(async (r) => {
-        if (!r.ok) throw new Error((await r.json()).error);
-      }),
+    mutationFn: (id: string) => apiClient.delete(`/api/customers/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["customers"] });
       setConfirmDelete(null);
@@ -143,13 +135,7 @@ export default function CustomersPage() {
 
   const toggleActiveMutation = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
-      fetch(`/api/customers/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active }),
-      }).then(async (r) => {
-        if (!r.ok) throw new Error((await r.json()).error);
-      }),
+      apiClient.patch(`/api/customers/${id}`, { active }),
     onSuccess: (_data, { active }) => {
       qc.invalidateQueries({ queryKey: ["customers"] });
       toast.success(active ? "Customer activated." : "Customer deactivated.");
@@ -178,23 +164,17 @@ export default function CustomersPage() {
 
   const addMutation = useMutation({
     mutationFn: (data: typeof emptyForm) =>
-      fetch("/api/customers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: data.name,
-          contact: data.contact || undefined,
-          typeId: data.typeId,
-          phone: data.phone || undefined,
-          whatsapp: data.whatsapp || undefined,
-          email: data.email || undefined,
-          vat: data.vat || undefined,
-          city: data.city || undefined,
-          postcode: data.postcode || undefined,
-          address: data.address || undefined,
-        }),
-      }).then(async (r) => {
-        if (!r.ok) throw new Error((await r.json()).error);
+      apiClient.post("/api/customers", {
+        name: data.name,
+        contact: data.contact || undefined,
+        typeId: data.typeId,
+        phone: data.phone || undefined,
+        whatsapp: data.whatsapp || undefined,
+        email: data.email || undefined,
+        vat: data.vat || undefined,
+        city: data.city || undefined,
+        postcode: data.postcode || undefined,
+        address: data.address || undefined,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["customers"] });

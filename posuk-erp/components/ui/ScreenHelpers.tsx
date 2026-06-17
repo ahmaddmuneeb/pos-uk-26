@@ -102,9 +102,12 @@ interface ListScreenProps<T extends Record<string, unknown>> {
   columns: Column<T>[];
   rows: T[];
   formFields: FormField[];
-  onAdd: (form: Record<string, string>) => Promise<void> | void;
-  onEdit?: (id: string, form: Record<string, string>) => Promise<void> | void;
-  onDelete?: (id: string) => Promise<void> | void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onAdd: (form: Record<string, string>) => Promise<any> | void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onEdit?: (id: string, form: Record<string, string>) => Promise<any> | void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onDelete?: (id: string) => Promise<any> | void;
   toolbar?: React.ReactNode;
   loading?: boolean;
 }

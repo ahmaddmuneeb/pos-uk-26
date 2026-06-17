@@ -6,6 +6,7 @@ import { BrandMark } from "@/components/core/BrandMark";
 import { Button } from "@/components/core/Button";
 import { Input } from "@/components/forms/Input";
 import { Field } from "@/components/forms/Field";
+import apiClient from "@/lib/apiClient";
 
 function ResetForm() {
   const searchParams = useSearchParams();
@@ -30,15 +31,14 @@ function ResetForm() {
     if (password !== confirm) { setError("Passwords do not match."); return; }
     setBusy(true);
     setError("");
-    const res = await fetch("/api/auth/reset-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, newPassword: password }),
-    });
-    const json = await res.json();
-    if (!res.ok) { setError(json.error ?? "Something went wrong."); setBusy(false); return; }
-    setDone(true);
-    setTimeout(() => router.push("/login"), 2500);
+    try {
+      await apiClient.post("/api/auth/reset-password", { token, newPassword: password });
+      setDone(true);
+      setTimeout(() => router.push("/login"), 2500);
+    } catch (e: unknown) {
+      setError((e as Error).message || "Something went wrong.");
+      setBusy(false);
+    }
   };
 
   return done ? (

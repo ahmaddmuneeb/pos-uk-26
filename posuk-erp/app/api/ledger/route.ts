@@ -1,11 +1,11 @@
 import { apiError } from "@/lib/apiError";
 import { db } from "@/lib/db";
-import { requireAuth } from "@/lib/auth";
+import { requireRight } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
-    await requireAuth();
+    await requireRight("Customer Receipts", "view");
     const customerId = req.nextUrl.searchParams.get("customerId");
     if (!customerId) {
       return NextResponse.json({ error: "customerId is required" }, { status: 400 });

@@ -3,13 +3,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/data-display/Badge";
 import { ListScreen } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import apiClient from "@/lib/apiClient";
 import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 export default function BranchesPage() {
   const qc = useQueryClient();
   const { data: rows = [], isLoading } = useQuery({ queryKey: ["branches"], queryFn: () => fetchArray<Record<string, unknown>>("/api/branches") });
   const add = useMutation({
-    mutationFn: (body: unknown) => fetch("/api/branches", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => { if (!r.ok) throw new Error("Failed"); return r.json(); }),
+    mutationFn: (body: unknown) => apiClient.post("/api/branches", body).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["branches"] }),
   });
 

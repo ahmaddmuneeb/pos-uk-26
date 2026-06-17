@@ -4,6 +4,7 @@ import { sendPasswordReset } from "@/lib/email";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { isRateLimited, clientIp } from "@/lib/rateLimit";
 
 const Schema = z.object({
   token: z.string().min(1),
@@ -12,6 +13,9 @@ const Schema = z.object({
 
 export async function POST(req: Request) {
   try {
+    if (isRateLimited(`reset-pw:${clientIp(req)}`, 10, 60 * 60 * 1000)) {
+      return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    }
     const { token, newPassword } = Schema.parse(await req.json());
     const reset = await db.passwordResetToken.findUnique({
       where: { token },

@@ -9,6 +9,7 @@ import { Select } from "@/components/forms/Select";
 import { Textarea } from "@/components/forms/Textarea";
 import { SubHead } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import apiClient from "@/lib/apiClient";
 import { toast } from "sonner";
 import { useRights } from "@/components/auth/RightsContext";
 import { ScreenGuard } from "@/components/auth/ScreenGuard";
@@ -48,7 +49,7 @@ export default function PreferencesPage() {
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const save = useMutation({
-    mutationFn: () => fetch("/api/preferences", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) }).then((r) => r.json()),
+    mutationFn: () => apiClient.post("/api/preferences", form).then((r) => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["preferences"] }); toast.success("Preferences saved."); },
     onError: (e: Error) => toast.error(e.message),
   });

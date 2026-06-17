@@ -4,6 +4,15 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.RESEND_FROM ?? "POS ERP <onboarding@resend.dev>";
 const APP = "POS ERP";
 
+function esc(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function base(body: string) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
@@ -78,12 +87,12 @@ export async function sendLoginAlert(
     subject: `New sign-in to your ${APP} account`,
     html: base(
       h("New sign-in detected") +
-      p(`Hi ${user.fullName}, a new sign-in to your account was recorded.`) +
+      p(`Hi ${esc(user.fullName)}, a new sign-in to your account was recorded.`) +
       info([
-        { label: "Username", value: `@${user.username}` },
-        { label: "Branch", value: user.branch.name },
-        { label: "IP address", value: ip },
-        { label: "Location", value: location },
+        { label: "Username", value: `@${esc(user.username)}` },
+        { label: "Branch", value: esc(user.branch.name) },
+        { label: "IP address", value: esc(ip) },
+        { label: "Location", value: esc(location) },
         { label: "Time", value: now() },
       ]) +
       warn("If this wasn't you, contact your administrator and change your password immediately.")
@@ -100,9 +109,9 @@ export async function sendPasswordChanged(user: { email: string | null; fullName
     subject: `Your ${APP} password was changed`,
     html: base(
       h("Password changed") +
-      p(`Hi ${user.fullName}, your account password was changed successfully.`) +
+      p(`Hi ${esc(user.fullName)}, your account password was changed successfully.`) +
       info([
-        { label: "Username", value: `@${user.username}` },
+        { label: "Username", value: `@${esc(user.username)}` },
         { label: "Time", value: now() },
       ]) +
       warn("If you did not make this change, contact your administrator immediately.")
@@ -119,9 +128,9 @@ export async function sendPasswordReset(user: { email: string | null; fullName: 
     subject: `Your ${APP} password was reset`,
     html: base(
       h("Password reset successful") +
-      p(`Hi ${user.fullName}, your password was reset successfully via the password recovery flow.`) +
+      p(`Hi ${esc(user.fullName)}, your password was reset successfully via the password recovery flow.`) +
       info([
-        { label: "Username", value: `@${user.username}` },
+        { label: "Username", value: `@${esc(user.username)}` },
         { label: "Time", value: now() },
       ]) +
       warn("If you did not request this reset, contact your administrator immediately.")

@@ -15,6 +15,7 @@ import { Input } from "@/components/forms/Input";
 import { Select } from "@/components/forms/Select";
 import { ExportActions } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import apiClient from "@/lib/apiClient";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
@@ -32,11 +33,7 @@ export default function UsersPage() {
 
   const toggleMutation = useMutation({
     mutationFn: (u: { id: string; username: string; status: string }) =>
-      fetch(`/api/users/${u.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: u.status === "Active" ? "Inactive" : "Active" }),
-      }).then(async (r) => { if (!r.ok) throw new Error((await r.json()).error || "Failed"); return r.json(); }),
+      apiClient.patch(`/api/users/${u.id}`, { status: u.status === "Active" ? "Inactive" : "Active" }).then((r) => r.data),
     onSuccess: (_data, u) => {
       qc.invalidateQueries({ queryKey: ["users"] });
       const action = u.status === "Active" ? "deactivated" : "activated";
@@ -46,7 +43,7 @@ export default function UsersPage() {
   });
 
   const add = useMutation({
-    mutationFn: (body: unknown) => fetch("/api/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => { if (!r.ok) throw new Error("Failed"); return r.json(); }),
+    mutationFn: (body: unknown) => apiClient.post("/api/users", body).then((r) => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["users"] }); setShow(false); setForm(blank); toast.success("User created."); },
     onError: (e: Error) => toast.error(e.message),
   });

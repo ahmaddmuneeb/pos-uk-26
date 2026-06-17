@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ListScreen } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import apiClient from "@/lib/apiClient";
 import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 interface CustType {
@@ -24,33 +25,18 @@ export default function CustTypesPage() {
 
   const addMutation = useMutation({
     mutationFn: (form: Record<string, string>) =>
-      fetch("/api/custtypes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name }),
-      }).then(async (r) => {
-        if (!r.ok) throw new Error((await r.json()).error);
-      }),
+      apiClient.post("/api/custtypes", { name: form.name }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["custtypes"] }),
   });
 
   const editMutation = useMutation({
     mutationFn: ({ id, form }: { id: string; form: Record<string, string> }) =>
-      fetch(`/api/custtypes/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name }),
-      }).then(async (r) => {
-        if (!r.ok) throw new Error((await r.json()).error);
-      }),
+      apiClient.patch(`/api/custtypes/${id}`, { name: form.name }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["custtypes"] }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) =>
-      fetch(`/api/custtypes/${id}`, { method: "DELETE" }).then(async (r) => {
-        if (!r.ok) throw new Error((await r.json()).error);
-      }),
+    mutationFn: (id: string) => apiClient.delete(`/api/custtypes/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["custtypes"] }),
   });
 
