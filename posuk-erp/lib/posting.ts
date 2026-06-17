@@ -150,14 +150,19 @@ export async function postReturn(input: { invoiceId: string; reason?: string; da
   return db.$transaction(async (tx) => {
     const invoice = await tx.invoice.findUniqueOrThrow({
       where: { id: input.invoiceId },
-      include: { lines: true, returns: { include: { lines: true } } },
+      include: { lines: { include: { product: { select: { name: true, sku: true } } } }, returns: { include: { lines: true } } },
     });
 
     // Validate qty: returnQty ≤ invoicedQty − priorReturns
     for (const l of input.lines) {
       const invoicedQty = invoice.lines.filter((il) => il.productId === l.productId).reduce((a, b) => a + b.qty, 0);
       const returnedQty = invoice.returns.flatMap((r) => r.lines).filter((rl) => rl.productId === l.productId).reduce((a, b) => a + b.qty, 0);
-      if (l.qty > invoicedQty - returnedQty) throw new Error(`Return qty for product ${l.productId} exceeds available (${invoicedQty - returnedQty})`);
+      const available = invoicedQty - returnedQty;
+      if (l.qty > available) {
+        const line = invoice.lines.find((il) => il.productId === l.productId);
+        const label = line ? `"${line.product.sku} – ${line.product.name}"` : "a selected product";
+        throw new Error(`Cannot return ${l.qty} unit(s) of ${label} — only ${available} unit(s) available for return.`);
+      }
     }
 
     const returnLines = input.lines.map((l) => {

@@ -38,6 +38,9 @@ export function apiError(e: unknown): NextResponse {
       { status: 409 }
     );
   }
+  if (e instanceof Error) {
+    return NextResponse.json({ error: e.message }, { status: 400 });
+  }
   console.error(e);
   return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
 }
