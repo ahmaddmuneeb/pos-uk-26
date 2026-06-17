@@ -19,6 +19,20 @@ const Schema = z.object({
   active: z.boolean().default(true),
 });
 
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    await requireRight("Products", "delete");
+    const { id } = await params;
+    await db.product.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (e: unknown) {
+    if ((e as { code?: string }).code === "P2003") {
+      return NextResponse.json({ error: "Cannot delete: this product is linked to invoices, orders or stock movements. Deactivate it instead." }, { status: 409 });
+    }
+    return apiError(e);
+  }
+}
+
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await requireRight("Products", "edit");

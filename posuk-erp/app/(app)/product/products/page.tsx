@@ -10,8 +10,9 @@ import { Modal } from "@/components/feedback/Modal";
 import { Field } from "@/components/forms/Field";
 import { Input } from "@/components/forms/Input";
 import { Select } from "@/components/forms/Select";
-import { ExportActions } from "@/components/ui/ScreenHelpers";
+import { ExportActions, KeyValue } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import { Eye, Pencil, Trash2, PackagePlus } from "lucide-react";
 import { toast } from "sonner";
 
 type CategoryOption = { id: string; code: string; name: string };
@@ -80,6 +81,9 @@ export default function ProductsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [viewing, setViewing] = useState<ProductRow | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<ProductRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [adjusting, setAdjusting] = useState<ProductRow | null>(null);
   const [adjustForm, setAdjustForm] = useState({ locationId: "", qty: "", reason: "" });
   const [adjustSaving, setAdjustSaving] = useState(false);
@@ -178,6 +182,28 @@ export default function ProductsPage() {
       toast.success("Stock adjusted.");
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) =>
+      fetch(`/api/products/${id}`, { method: "DELETE" }).then(async (r) => {
+        if (!r.ok) throw new Error((await r.json()).error || "Failed to delete");
+      }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); setConfirmDelete(null); },
+  });
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    setDeleting(true);
+    try {
+      await deleteMutation.mutateAsync(confirmDelete.id);
+      toast.success(`"${confirmDelete.name}" deleted.`);
+    } catch (e: unknown) {
+      toast.error((e as Error).message);
+      setConfirmDelete(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const openAdd = () => { setEditingId(null); setForm(EMPTY_FORM); setShow(true); };
 
@@ -300,13 +326,15 @@ export default function ProductsPage() {
     },
     {
       key: "act",
-      header: "",
-      width: 70,
+      header: "Actions",
+      width: 120,
       align: "right",
       render: (r) => (
         <span className="no-print" style={{ display: "inline-flex", gap: 4, justifyContent: "flex-end" }}>
-          <IconButton label="Edit product" size="sm" onClick={() => openEdit(r)}>✎</IconButton>
-          <IconButton label="Adjust stock" size="sm" onClick={() => openAdjust(r)}>±</IconButton>
+          <IconButton label="View" size="sm" onClick={() => setViewing(r)}><Eye size={14} color="#38bdf8" /></IconButton>
+          <IconButton label="Edit" size="sm" onClick={() => openEdit(r)}><Pencil size={14} color="#4ade80" /></IconButton>
+          <IconButton label="Adjust stock" size="sm" onClick={() => openAdjust(r)}><PackagePlus size={14} color="#a78bfa" /></IconButton>
+          <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete(r)}><Trash2 size={14} color="#f87171" /></IconButton>
         </span>
       ),
     },
@@ -484,6 +512,51 @@ export default function ProductsPage() {
             </div>
           )}
         </div>
+      </Modal>
+
+      {/* Quick-view modal */}
+      <Modal
+        open={!!viewing}
+        title={viewing ? `${viewing.sku} — ${viewing.name}` : ""}
+        wide
+        onClose={() => setViewing(null)}
+        footer={<Button variant="ghost" onClick={() => setViewing(null)}>Close</Button>}
+      >
+        {viewing && (
+          <KeyValue cols={3} items={[
+            ["SKU", viewing.sku],
+            ["Type", viewing.type],
+            ["Status", <Badge key="s" tone={viewing.active ? "success" : "neutral"}>{viewing.active ? "Active" : "Inactive"}</Badge>],
+            ["Category", viewing.category?.name ?? "—"],
+            ["Sub-category", viewing.sub?.name ?? "—"],
+            ["UOM", viewing.uom?.name ?? "—"],
+            ["Purchase rate", fmt(viewing.purchaseRate)],
+            ["Wholesale rate", fmt(viewing.wholesaleRate)],
+            ["Retail rate", fmt(viewing.retailRate)],
+            ["Reorder level", String(viewing.reorderLevel)],
+            ["Current stock", String(viewing.currentStock ?? 0)],
+            ["Barcode", viewing.barcode ?? "—"],
+          ]} />
+        )}
+      </Modal>
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={!!confirmDelete}
+        title="Delete Product"
+        onClose={() => setConfirmDelete(null)}
+        footer={
+          <>
+            <Button onClick={handleDelete} disabled={deleting} style={{ background: "var(--danger)", borderColor: "var(--danger)" }}>
+              {deleting ? "Deleting…" : "Yes, delete"}
+            </Button>
+            <Button variant="ghost" onClick={() => setConfirmDelete(null)}>Cancel</Button>
+          </>
+        }
+      >
+        <p style={{ margin: 0, color: "var(--text)" }}>
+          Are you sure you want to delete <strong>{confirmDelete?.name}</strong>? This cannot be undone.
+        </p>
       </Modal>
 
       <Modal

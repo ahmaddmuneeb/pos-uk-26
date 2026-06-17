@@ -93,6 +93,7 @@ export interface FormField {
   options?: string[];
   type?: string;
   default?: string;
+  viewKey?: string;
 }
 
 interface ListScreenProps<T extends Record<string, unknown>> {
@@ -130,7 +131,7 @@ export function ListScreen<T extends Record<string, unknown>>({ title, addLabel,
 
   const save = async () => {
     const required = formFields.find((f) => f.required && !String(form[f.key]).trim());
-    if (required) return;
+    if (required) { toast.error(`${required.label} is required.`); return; }
     setSaving(true);
     try {
       if (editingId) { await onEdit?.(editingId, form); }
@@ -193,7 +194,10 @@ export function ListScreen<T extends Record<string, unknown>>({ title, addLabel,
           {formFields.map((f) => (
             <Field key={f.key} label={f.label} style={{ gridColumn: f.full ? "1 / -1" : undefined }}>
               {f.options
-                ? <Select value={form[f.key]} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}>{f.options.map((o) => <option key={o}>{o}</option>)}</Select>
+                ? <Select value={form[f.key]} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}>
+                    <option value="">— Select —</option>
+                    {f.options.map((o) => <option key={o}>{o}</option>)}
+                  </Select>
                 : <Input type={f.type} value={form[f.key]} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })} placeholder={f.placeholder} />}
             </Field>
           ))}
@@ -211,7 +215,7 @@ export function ListScreen<T extends Record<string, unknown>>({ title, addLabel,
           {formFields.map((f) => (
             <div key={f.key} style={{ gridColumn: f.full ? "1 / -1" : undefined }}>
               <div style={{ fontSize: "var(--fs-2xs)", textTransform: "uppercase", letterSpacing: "var(--tracking-wide)", color: "var(--text-subtle)", fontWeight: 600, marginBottom: 3 }}>{f.label}</div>
-              <div style={{ fontSize: "var(--fs-base)", color: "var(--text)", fontWeight: 500 }}>{String(viewing?.[f.key as keyof T] ?? "—") || "—"}</div>
+              <div style={{ fontSize: "var(--fs-base)", color: "var(--text)", fontWeight: 500 }}>{String(viewing?.[(f.viewKey ?? f.key) as keyof T] ?? "—") || "—"}</div>
             </div>
           ))}
         </div>

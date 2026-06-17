@@ -56,7 +56,7 @@ export default function SubCategoriesPage() {
       formFields={[
         { key: "code", label: "Code", required: true, placeholder: "SUB-01" },
         { key: "name", label: "Sub-category name", required: true },
-        { key: "parentId", label: "Parent category", required: true, options: categories.map((c) => c.name) },
+        { key: "parentId", label: "Parent category", required: true, options: categories.map((c) => c.name), viewKey: "parentName" },
       ]}
       onAdd={(form) => {
         const parentId = categoryNameToId[form.parentId] ?? form.parentId;

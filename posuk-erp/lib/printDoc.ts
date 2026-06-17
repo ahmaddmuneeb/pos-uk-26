@@ -54,6 +54,15 @@ function signatureBlock(leftLabel: string, rightLabel: string) {
     </div>`;
 }
 
+export function simpleTableDoc(title: string, subtitle: string, rows: [string, string][]): string {
+  return `
+    <h2 style="margin:0 0 4px;font-size:20px">${esc(title)}</h2>
+    ${subtitle ? `<p style="color:#666;margin:0 0 20px;font-size:13px">${esc(subtitle)}</p>` : ""}
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      ${rows.map(([k, v]) => `<tr><td style="padding:7px 10px;border-bottom:1px solid #eee;color:#666;font-size:11px;text-transform:uppercase;width:40%;font-weight:600">${esc(k)}</td><td style="padding:7px 10px;border-bottom:1px solid #eee">${v}</td></tr>`).join("")}
+    </table>`;
+}
+
 export function openPrintWindow(title: string, bodyHtml: string) {
   const win = window.open("", "_blank", "width=850,height=1100");
   if (!win) return;
