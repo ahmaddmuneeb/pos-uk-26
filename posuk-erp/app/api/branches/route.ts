@@ -1,3 +1,4 @@
+import { apiError } from "@/lib/apiError";
 import { db } from "@/lib/db";
 import { requireRight } from "@/lib/auth";
 import { z } from "zod";
@@ -16,7 +17,7 @@ export async function GET() {
     await requireRight("Branches", "view");
     const rows = await db.branch.findMany({ orderBy: { code: "asc" } });
     return NextResponse.json(rows);
-  } catch (e: unknown) { return NextResponse.json({ error: (e as Error).message }, { status: (e as { status?: number }).status || 500 }); }
+  } catch (e: unknown) { return apiError(e); }
 }
 
 export async function POST(req: Request) {
@@ -26,5 +27,5 @@ export async function POST(req: Request) {
     const branch = await db.branch.create({ data });
     await db.activityLog.create({ data: { userId: user.id, docType: "Branch", docNo: data.code, action: "Created" } });
     return NextResponse.json(branch, { status: 201 });
-  } catch (e: unknown) { return NextResponse.json({ error: (e as Error).message }, { status: (e as { status?: number }).status || 400 }); }
+  } catch (e: unknown) { return apiError(e); }
 }

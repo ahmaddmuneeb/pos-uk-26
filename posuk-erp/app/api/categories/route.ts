@@ -1,3 +1,4 @@
+import { apiError } from "@/lib/apiError";
 import { db } from "@/lib/db";
 import { requireRight } from "@/lib/auth";
 import { z } from "zod";
@@ -14,7 +15,7 @@ export async function GET() {
     const rows = await db.category.findMany({ orderBy: { code: "asc" } });
     return NextResponse.json(rows);
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: (e as { status?: number }).status || 500 });
+    return apiError(e);
   }
 }
 
@@ -25,6 +26,6 @@ export async function POST(req: Request) {
     const category = await db.category.create({ data });
     return NextResponse.json(category, { status: 201 });
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: (e as { status?: number }).status || 400 });
+    return apiError(e);
   }
 }

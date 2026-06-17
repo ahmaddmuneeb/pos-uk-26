@@ -9,6 +9,7 @@ import { Select } from "@/components/forms/Select";
 import { Textarea } from "@/components/forms/Textarea";
 import { SubHead } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import { toast } from "sonner";
 
 const DEFAULTS: Record<string, string> = {
   company_name: "POS UK Wholesale Ltd",
@@ -45,7 +46,8 @@ export default function PreferencesPage() {
 
   const save = useMutation({
     mutationFn: () => fetch("/api/preferences", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) }).then((r) => r.json()),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["preferences"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["preferences"] }); toast.success("Preferences saved."); },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   return (
@@ -63,7 +65,13 @@ export default function PreferencesPage() {
           <SubHead>Tax &amp; currency</SubHead>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <Field label="Default VAT rate (%)"><Input value={form.default_vat_rate} onChange={(e) => set("default_vat_rate", e.target.value)} /></Field>
-            <Field label="Currency"><Select value={form.currency} onChange={(e) => set("currency", e.target.value)}><option value="GBP">GBP (£)</option></Select></Field>
+            <Field label="Currency">
+              <Select value={form.currency} onChange={(e) => set("currency", e.target.value)}>
+                <option value="GBP">GBP (£) — British Pound</option>
+                <option value="USD">USD ($) — US Dollar</option>
+                <option value="EUR">EUR (€) — Euro</option>
+              </Select>
+            </Field>
           </div>
         </div>
         <div>

@@ -12,6 +12,7 @@ import { TotalsBar, ExportActions } from "@/components/ui/ScreenHelpers";
 import { LineItems, docTotals, DocLine } from "@/components/ui/LineItems";
 import { fmt } from "@/lib/currency";
 import { fetchArray } from "@/lib/fetchJson";
+import { toast } from "sonner";
 
 interface InvoiceOpt { id: string; no: string; customerName: string }
 
@@ -32,7 +33,7 @@ export default function ReturnsPage() {
 
   const normProducts = products.map((p) => ({ id: p.id, sku: p.sku, name: p.name, wholesaleRate: typeof p.wholesaleRate === "string" ? parseFloat(p.wholesaleRate) : p.wholesaleRate }));
 
-  const reset = () => { setHead({ invoiceId: "", reason: REASONS[0], date: new Date().toISOString().slice(0, 10) }); setLines([blankLine]); setError(""); };
+  const reset = () => { setHead({ invoiceId: "", reason: REASONS[0], date: new Date().toISOString().slice(0, 10) }); setLines([blankLine]); };
 
   const save = useMutation({
     mutationFn: () => fetch("/api/returns", {
@@ -42,8 +43,8 @@ export default function ReturnsPage() {
         lines: lines.filter((l) => l.productId).map((l) => ({ productId: l.productId, qty: parseInt(l.qty) || 0, rate: parseFloat(l.rate) || 0, vatRate: parseFloat(l.vat) || 0 })),
       }),
     }).then(async (r) => { if (!r.ok) throw new Error((await r.json()).error || "Failed to save return"); return r.json(); }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["returns"] }); setShow(false); reset(); },
-    onError: (e: Error) => setError(e.message),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["returns"] }); setShow(false); reset(); toast.success("Return saved."); },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const valid = head.invoiceId && lines.some((l) => l.productId);

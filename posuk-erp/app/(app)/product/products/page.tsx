@@ -12,6 +12,7 @@ import { Input } from "@/components/forms/Input";
 import { Select } from "@/components/forms/Select";
 import { ExportActions } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import { toast } from "sonner";
 
 type CategoryOption = { id: string; code: string; name: string };
 type SubOption = { id: string; code: string; name: string; parentId: string };
@@ -130,7 +131,7 @@ export default function ProductsPage() {
       qc.invalidateQueries({ queryKey: ["products"] });
       setForm(EMPTY_FORM);
       setShow(false);
-      setError(null);
+      toast.success("Product created.");
     },
   });
 
@@ -152,7 +153,7 @@ export default function ProductsPage() {
       setForm(EMPTY_FORM);
       setEditingId(null);
       setShow(false);
-      setError(null);
+      toast.success("Product updated.");
     },
   });
 
@@ -174,10 +175,11 @@ export default function ProductsPage() {
       setAdjusting(null);
       setAdjustForm({ locationId: "", qty: "", reason: "" });
       setAdjustError(null);
+      toast.success("Stock adjusted.");
     },
   });
 
-  const openAdd = () => { setEditingId(null); setForm(EMPTY_FORM); setError(null); setShow(true); };
+  const openAdd = () => { setEditingId(null); setForm(EMPTY_FORM); setShow(true); };
 
   const openEdit = (p: ProductRow) => {
     setEditingId(p.id);
@@ -194,8 +196,7 @@ export default function ProductsPage() {
       reorderLevel: String(p.reorderLevel),
       barcode: p.barcode ?? "",
     });
-    setError(null);
-    setShow(true);
+        setShow(true);
   };
 
   const openAdjust = (p: ProductRow) => {
@@ -230,12 +231,10 @@ export default function ProductsPage() {
 
   const save = async () => {
     if (!form.sku.trim() || !form.name.trim() || !form.categoryId || !form.subId || !form.uomId) {
-      setError("Please fill in all required fields.");
-      return;
+      toast.error("Please fill in all required fields."); return;
     }
     setSaving(true);
-    setError(null);
-    const body = {
+        const body = {
       sku: form.sku.trim(),
       name: form.name.trim(),
       type: form.type,
@@ -252,7 +251,7 @@ export default function ProductsPage() {
       if (editingId) await update.mutateAsync({ id: editingId, body });
       else await add.mutateAsync(body);
     } catch (e: unknown) {
-      setError((e as Error).message);
+      toast.error((e as Error).message);
     } finally {
       setSaving(false);
     }

@@ -1,3 +1,4 @@
+import { apiError } from "@/lib/apiError";
 import { db } from "@/lib/db";
 import { requireRight, logActivity } from "@/lib/auth";
 import { nextCode } from "@/lib/posting";
@@ -51,9 +52,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json(result, { status: 201 });
   } catch (e: unknown) {
-    return NextResponse.json(
-      { error: (e as Error).message },
-      { status: (e as { status?: number }).status || 400 },
-    );
+    return apiError(e);
   }
 }

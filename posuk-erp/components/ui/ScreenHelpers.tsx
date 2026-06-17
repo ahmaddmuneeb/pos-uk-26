@@ -3,11 +3,14 @@ import React from "react";
 import { Card } from "@/components/data-display/Card";
 import { DataTable, Column } from "@/components/data-display/DataTable";
 import { Button } from "@/components/core/Button";
+import { IconButton } from "@/components/core/IconButton";
 import { Input } from "@/components/forms/Input";
 import { Select } from "@/components/forms/Select";
 import { Field } from "@/components/forms/Field";
 import { Modal } from "@/components/feedback/Modal";
 import { exportCsv } from "@/lib/csv";
+import { Eye, Pencil, Trash2 } from "lucide-react";
+import { useToast } from "@/components/feedback/Toast";
 
 export function ExportActions<T>({ columns, rows, filename, style }: { columns: Column<T>[]; rows: T[]; filename: string; style?: React.CSSProperties }) {
   return (
@@ -99,30 +102,92 @@ interface ListScreenProps<T extends Record<string, unknown>> {
   rows: T[];
   formFields: FormField[];
   onAdd: (form: Record<string, string>) => Promise<void> | void;
+  onEdit?: (id: string, form: Record<string, string>) => Promise<void> | void;
+  onDelete?: (id: string) => Promise<void> | void;
   toolbar?: React.ReactNode;
   loading?: boolean;
 }
 
-export function ListScreen<T extends Record<string, unknown>>({ title, addLabel, columns, rows, formFields, onAdd, toolbar, loading }: ListScreenProps<T>) {
+export function ListScreen<T extends Record<string, unknown>>({ title, addLabel, columns, rows, formFields, onAdd, onEdit, onDelete, toolbar, loading }: ListScreenProps<T>) {
+  const toast = useToast();
+  const blank = () => Object.fromEntries(formFields.map((f) => [f.key, f.default || ""]));
   const [show, setShow] = React.useState(false);
-  const [form, setForm] = React.useState<Record<string, string>>(() => Object.fromEntries(formFields.map((f) => [f.key, f.default || ""])));
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [form, setForm] = React.useState<Record<string, string>>(blank);
   const [saving, setSaving] = React.useState(false);
+
+  const [viewing, setViewing] = React.useState<T | null>(null);
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
+
+  const openAdd = () => { setEditingId(null); setForm(blank()); setShow(true); };
+  const openEdit = (row: T) => {
+    setViewing(null);
+    setEditingId(row.id as string);
+    setForm(Object.fromEntries(formFields.map((f) => [f.key, String(row[f.key] ?? f.default ?? "")])));
+    setShow(true);
+  };
 
   const save = async () => {
     const required = formFields.find((f) => f.required && !String(form[f.key]).trim());
     if (required) return;
     setSaving(true);
-    try { await onAdd(form); setForm(Object.fromEntries(formFields.map((f) => [f.key, f.default || ""]))); setShow(false); }
-    finally { setSaving(false); }
+    try {
+      if (editingId) { await onEdit?.(editingId, form); }
+      else { await onAdd(form); }
+      setForm(blank());
+      setShow(false);
+      toast.success(editingId ? "Record updated." : "Record created.");
+    } catch (e: unknown) {
+      toast.error((e as Error).message);
+    } finally { setSaving(false); }
   };
 
+  const handleDelete = async () => {
+    if (!viewing) return;
+    setDeleting(true);
+    try {
+      await onDelete?.(viewing.id as string);
+      setConfirmDelete(false);
+      setViewing(null);
+      toast.success("Record deleted.");
+    } catch (e: unknown) {
+      toast.error((e as Error).message);
+      setConfirmDelete(false);
+      setViewing(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const modalTitle = editingId ? `Edit ${addLabel.replace(/^Add /, "")}` : addLabel;
   const filename = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+  const allColumns: Column<T>[] = (onEdit || onDelete || true)
+    ? [...columns, {
+        key: "__actions" as keyof T,
+        header: "Actions",
+        width: "25%",
+        align: "right" as const,
+        render: (r) => (
+          <span style={{ display: "inline-flex", gap: "0.25rem" }}>
+            <IconButton label="View" size="sm" onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); setViewing(r as T); }}><Eye size={14} color="#38bdf8" /></IconButton>
+            {onEdit && <IconButton label="Edit" size="sm" onClick={(e) => { e.stopPropagation(); openEdit(r as T); }}><Pencil size={14} color="#4ade80" /></IconButton>}
+            {onDelete && <IconButton label="Delete" size="sm" onClick={(e) => { e.stopPropagation(); setViewing(r as T); setConfirmDelete(true); }}><Trash2 size={14} color="#f87171" /></IconButton>}
+          </span>
+        ),
+      }]
+    : columns;
+
   return (
-    <Card title={title} actions={<><ExportActions columns={columns} rows={rows} filename={filename} /><Button onClick={() => setShow(true)}>{addLabel}</Button></>}>
+    <Card title={title} actions={<><ExportActions columns={columns} rows={rows} filename={filename} /><Button onClick={openAdd}>{addLabel}</Button></>}>
       {toolbar && <Toolbar>{toolbar}</Toolbar>}
-      {loading ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div> : <DataTable columns={columns} rows={rows} rowKey={(r, i) => (r.id as string) || i} />}
-      <Modal open={show} title={addLabel} onClose={() => setShow(false)}
+      {loading
+        ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div>
+        : <DataTable columns={allColumns} rows={rows} rowKey={(r, i) => (r.id as string) || i} />}
+
+      {/* Add / Edit modal */}
+      <Modal open={show} title={modalTitle} onClose={() => setShow(false)}
         footer={<><Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button><Button variant="ghost" onClick={() => setShow(false)}>Cancel</Button></>}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           {formFields.map((f) => (
@@ -133,6 +198,42 @@ export function ListScreen<T extends Record<string, unknown>>({ title, addLabel,
             </Field>
           ))}
         </div>
+      </Modal>
+
+      {/* Quick-view modal */}
+      <Modal
+        open={!!viewing && !confirmDelete}
+        title={String(viewing?.[formFields[0]?.key as keyof T] ?? "Details")}
+        onClose={() => setViewing(null)}
+        footer={<Button variant="ghost" onClick={() => setViewing(null)}>Close</Button>}
+      >
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.9rem 1.5rem" }}>
+          {formFields.map((f) => (
+            <div key={f.key} style={{ gridColumn: f.full ? "1 / -1" : undefined }}>
+              <div style={{ fontSize: "var(--fs-2xs)", textTransform: "uppercase", letterSpacing: "var(--tracking-wide)", color: "var(--text-subtle)", fontWeight: 600, marginBottom: 3 }}>{f.label}</div>
+              <div style={{ fontSize: "var(--fs-base)", color: "var(--text)", fontWeight: 500 }}>{String(viewing?.[f.key as keyof T] ?? "—") || "—"}</div>
+            </div>
+          ))}
+        </div>
+      </Modal>
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={!!viewing && confirmDelete}
+        title="Confirm Delete"
+        onClose={() => { setConfirmDelete(false); setViewing(null); }}
+        footer={
+          <>
+            <Button onClick={handleDelete} disabled={deleting} style={{ background: "var(--danger)", borderColor: "var(--danger)" }}>
+              {deleting ? "Deleting…" : "Yes, delete"}
+            </Button>
+            <Button variant="ghost" onClick={() => { setConfirmDelete(false); setViewing(null); }}>Cancel</Button>
+          </>
+        }
+      >
+        <p style={{ color: "var(--text)", margin: 0 }}>
+          Are you sure you want to delete <strong>{String(viewing?.[formFields[0]?.key as keyof T] ?? "this record")}</strong>? This cannot be undone.
+        </p>
       </Modal>
     </Card>
   );

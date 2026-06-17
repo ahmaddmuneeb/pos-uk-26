@@ -1,3 +1,4 @@
+import { apiError } from "@/lib/apiError";
 import { db } from "@/lib/db";
 import { requireRight } from "@/lib/auth";
 import { z } from "zod";
@@ -24,7 +25,7 @@ export async function GET() {
       roleName: u.role.name, roleId: u.roleId, isAdmin: u.role.name === "System Administrator",
       branchName: u.branch.name, branchId: u.branchId, status: u.status, lastLogin: u.lastLogin,
     })));
-  } catch (e: unknown) { return NextResponse.json({ error: (e as Error).message }, { status: (e as { status?: number }).status || 500 }); }
+  } catch (e: unknown) { return apiError(e); }
 }
 
 export async function POST(req: Request) {
@@ -35,5 +36,5 @@ export async function POST(req: Request) {
     const created = await db.user.create({ data: { username: data.username, fullName: data.fullName, roleId: data.roleId, branchId: data.branchId, passwordHash, mustChangePwd: true } });
     await db.activityLog.create({ data: { userId: user.id, docType: "User", docNo: data.username, action: "Created" } });
     return NextResponse.json({ id: created.id }, { status: 201 });
-  } catch (e: unknown) { return NextResponse.json({ error: (e as Error).message }, { status: (e as { status?: number }).status || 400 }); }
+  } catch (e: unknown) { return apiError(e); }
 }

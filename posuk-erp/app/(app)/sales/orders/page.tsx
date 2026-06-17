@@ -13,6 +13,7 @@ import { TotalsBar, ExportActions } from "@/components/ui/ScreenHelpers";
 import { LineItems, docTotals, DocLine } from "@/components/ui/LineItems";
 import { fmt } from "@/lib/currency";
 import { fetchArray } from "@/lib/fetchJson";
+import { toast } from "sonner";
 
 interface Customer { id: string; name: string }
 interface SalePerson { id: string; name: string }
@@ -35,7 +36,7 @@ export default function OrdersPage() {
 
   const normProducts = (products as unknown as { id: string; sku: string; name: string; wholesaleRate: string | number }[]).map((p) => ({ id: p.id, sku: p.sku, name: p.name, wholesaleRate: typeof p.wholesaleRate === "string" ? parseFloat(p.wholesaleRate) : p.wholesaleRate }));
 
-  const reset = () => { setHead({ customerId: "", salePersonId: "", date: new Date().toISOString().slice(0, 10) }); setLines([blankLine]); setError(""); };
+  const reset = () => { setHead({ customerId: "", salePersonId: "", date: new Date().toISOString().slice(0, 10) }); setLines([blankLine]); };
 
   const save = useMutation({
     mutationFn: () => fetch("/api/orders", {
@@ -45,8 +46,8 @@ export default function OrdersPage() {
         lines: lines.filter((l) => l.productId).map((l) => ({ productId: l.productId, qty: parseInt(l.qty) || 0, rate: parseFloat(l.rate) || 0, discount: parseFloat(l.disc) || 0, vatRate: parseFloat(l.vat) || 0 })),
       }),
     }).then(async (r) => { if (!r.ok) throw new Error((await r.json()).error || "Failed to save"); return r.json(); }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["orders"] }); setShow(false); reset(); },
-    onError: (e: Error) => setError(e.message),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["orders"] }); setShow(false); reset(); toast.success("Order saved."); },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const valid = head.customerId && lines.some((l) => l.productId);

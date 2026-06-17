@@ -14,6 +14,8 @@ import { Textarea } from "@/components/forms/Textarea";
 import { Toolbar, SubHead, KeyValue, ExportActions } from "@/components/ui/ScreenHelpers";
 import { fmt } from "@/lib/currency";
 import { fetchArray } from "@/lib/fetchJson";
+import { Eye, Pencil, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { useToast } from "@/components/feedback/Toast";
 
 interface CustType { id: string; name: string }
 
@@ -52,13 +54,17 @@ const emptyForm = {
 
 export default function CustomersPage() {
   const qc = useQueryClient();
+  const toast = useToast();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [selected, setSelected] = useState<Customer | null>(null);
+  const [viewing, setViewing] = useState<Customer | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [editing, setEditing] = useState<Customer | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Customer | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState({ ...emptyForm });
   const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState("");
 
   const { data: custTypes = [] } = useQuery<CustType[]>({
     queryKey: ["custtypes"],
@@ -76,6 +82,96 @@ export default function CustomersPage() {
     queryFn: () => fetchArray(`/api/ledger?customerId=${selected!.id}`),
     enabled: !!selected,
   });
+
+  const openEdit = (c: Customer) => {
+    setEditing(c);
+    setForm({
+      name: c.name,
+      contact: c.contact ?? "",
+      typeId: c.typeId,
+      phone: c.phone ?? "",
+      whatsapp: c.whatsapp ?? "",
+      email: c.email ?? "",
+      vat: c.vat ?? "",
+      city: c.city ?? "",
+      postcode: c.postcode ?? "",
+      address: c.address ?? "",
+    });
+    ;
+  };
+
+  const editMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: typeof emptyForm }) =>
+      fetch(`/api/customers/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.name,
+          contact: data.contact || undefined,
+          typeId: data.typeId,
+          phone: data.phone || undefined,
+          whatsapp: data.whatsapp || undefined,
+          email: data.email || undefined,
+          vat: data.vat || undefined,
+          city: data.city || undefined,
+          postcode: data.postcode || undefined,
+          address: data.address || undefined,
+        }),
+      }).then(async (r) => {
+        if (!r.ok) throw new Error((await r.json()).error);
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      setEditing(null);
+      setForm({ ...emptyForm });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) =>
+      fetch(`/api/customers/${id}`, { method: "DELETE" }).then(async (r) => {
+        if (!r.ok) throw new Error((await r.json()).error);
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      setConfirmDelete(null);
+    },
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) =>
+      fetch(`/api/customers/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active }),
+      }).then(async (r) => {
+        if (!r.ok) throw new Error((await r.json()).error);
+      }),
+    onSuccess: (_data, { active }) => {
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      toast.success(active ? "Customer activated." : "Customer deactivated.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    setDeleting(true);
+    try {
+      await deleteMutation.mutateAsync(confirmDelete.id);
+      toast.success(`${confirmDelete.name} deleted.`);
+    } catch (e: unknown) {
+      toast.error((e as Error).message);
+      setConfirmDelete(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeactivate = async (c: Customer) => {
+    await toggleActiveMutation.mutateAsync({ id: c.id, active: false });
+    setConfirmDelete(null);
+  };
 
   const addMutation = useMutation({
     mutationFn: (data: typeof emptyForm) =>
@@ -135,10 +231,24 @@ export default function CustomersPage() {
     },
     {
       key: "actions",
-      header: "",
-      width: 40,
+      header: "Actions",
+      width: 130,
+      align: "right",
       render: (r) => (
-        <span className="no-print"><IconButton label="Edit" size="sm" onClick={() => setSelected(r)}>✎</IconButton></span>
+        <span className="no-print" style={{ display: "inline-flex", gap: "0.25rem" }}>
+          <IconButton label="View" size="sm" onClick={(e) => { (e as React.MouseEvent).stopPropagation(); setViewing(r); }}><Eye size={14} color="#38bdf8" /></IconButton>
+          <IconButton label="Edit" size="sm" onClick={(e) => { (e as React.MouseEvent).stopPropagation(); openEdit(r); }}><Pencil size={14} color="#4ade80" /></IconButton>
+          <IconButton
+            label={r.active ? "Deactivate" : "Activate"}
+            size="sm"
+            onClick={(e) => { (e as React.MouseEvent).stopPropagation(); toggleActiveMutation.mutate({ id: r.id, active: !r.active }); }}
+          >
+            {r.active
+              ? <ToggleRight size={14} color="#facc15" />
+              : <ToggleLeft size={14} color="#facc15" />}
+          </IconButton>
+          <IconButton label="Delete" size="sm" onClick={(e) => { (e as React.MouseEvent).stopPropagation(); setConfirmDelete(r); }}><Trash2 size={14} color="#f87171" /></IconButton>
+        </span>
       ),
     },
   ];
@@ -163,14 +273,19 @@ export default function CustomersPage() {
   ];
 
   const handleSave = async () => {
-    if (!form.name.trim()) { setFormError("Name is required"); return; }
-    if (!form.typeId) { setFormError("Customer type is required"); return; }
-    setFormError("");
+    if (!form.name.trim()) { toast.error("Name is required."); return; }
+    if (!form.typeId) { toast.error("Customer type is required."); return; }
     setSaving(true);
     try {
-      await addMutation.mutateAsync(form);
+      if (editing) {
+        await editMutation.mutateAsync({ id: editing.id, data: form });
+        toast.success("Customer updated.");
+      } else {
+        await addMutation.mutateAsync(form);
+        toast.success("Customer created.");
+      }
     } catch (e: unknown) {
-      setFormError((e as Error).message);
+      toast.error((e as Error).message);
     } finally {
       setSaving(false);
     }
@@ -260,21 +375,62 @@ export default function CustomersPage() {
         )}
       </Card>
 
+      {/* Quick-view modal */}
       <Modal
-        open={showAdd}
-        title="Add Customer"
+        open={!!viewing}
+        title={`${viewing?.name ?? ""} (${viewing?.code ?? ""})`}
         wide
-        onClose={() => { setShowAdd(false); setForm({ ...emptyForm }); setFormError(""); }}
+        onClose={() => setViewing(null)}
+        footer={<Button variant="ghost" onClick={() => setViewing(null)}>Close</Button>}
+      >
+        {viewing && (
+          <KeyValue cols={3} items={[
+            ["Type", viewing.typeName],
+            ["Contact", viewing.contact ?? "—"],
+            ["Phone", viewing.phone ?? "—"],
+            ["WhatsApp", viewing.whatsapp ?? "—"],
+            ["Email", viewing.email ?? "—"],
+            ["VAT No.", viewing.vat ?? "—"],
+            ["City", viewing.city ?? "—"],
+            ["Postcode", viewing.postcode ?? "—"],
+            ["Address", viewing.address ?? "—"],
+            ["Status", <Badge key="s" tone={viewing.active ? "success" : "neutral"}>{viewing.active ? "Active" : "Inactive"}</Badge>],
+          ]} />
+        )}
+      </Modal>
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={!!confirmDelete}
+        title="Delete Customer"
+        onClose={() => setConfirmDelete(null)}
         footer={
           <>
-            <Button onClick={handleSave} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
-            <Button variant="ghost" onClick={() => { setShowAdd(false); setForm({ ...emptyForm }); setFormError(""); }}>Cancel</Button>
+            <Button onClick={handleDelete} disabled={deleting} style={{ background: "var(--danger)", borderColor: "var(--danger)" }}>
+              {deleting ? "Deleting…" : "Yes, delete"}
+            </Button>
+            <Button variant="ghost" onClick={() => setConfirmDelete(null)}>Cancel</Button>
           </>
         }
       >
-        {formError && (
-          <div style={{ color: "var(--danger)", marginBottom: "0.75rem", fontSize: "var(--fs-sm)" }}>{formError}</div>
-        )}
+        <p style={{ margin: 0, color: "var(--text)" }}>
+          Are you sure you want to permanently delete <strong>{confirmDelete?.name}</strong>? This cannot be undone.
+        </p>
+      </Modal>
+
+      {/* Add / Edit modal */}
+      <Modal
+        open={showAdd || !!editing}
+        title={editing ? `Edit Customer — ${editing.code}` : "Add Customer"}
+        wide
+        onClose={() => { setShowAdd(false); setEditing(null); setForm({ ...emptyForm }); ; }}
+        footer={
+          <>
+            <Button onClick={handleSave} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+            <Button variant="ghost" onClick={() => { setShowAdd(false); setEditing(null); setForm({ ...emptyForm }); ; }}>Cancel</Button>
+          </>
+        }
+      >
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <Field label="Name *" style={{ gridColumn: "1 / -1" }}>
             <Input value={form.name} onChange={set("name")} placeholder="Full company or customer name" />

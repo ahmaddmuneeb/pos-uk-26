@@ -1,3 +1,4 @@
+import { apiError } from "@/lib/apiError";
 import { db } from "@/lib/db";
 import { requireRight } from "@/lib/auth";
 import { NextResponse } from "next/server";
@@ -7,7 +8,7 @@ export async function GET() {
     await requireRight("Preferences", "view");
     const prefs = await db.preference.findMany();
     return NextResponse.json(prefs);
-  } catch (e: unknown) { return NextResponse.json({ error: (e as Error).message }, { status: (e as { status?: number }).status || 500 }); }
+  } catch (e: unknown) { return apiError(e); }
 }
 
 export async function POST(req: Request) {
@@ -20,5 +21,5 @@ export async function POST(req: Request) {
     await db.$transaction(ops);
     await db.activityLog.create({ data: { userId: user.id, docType: "Preferences", docNo: "global", action: "Updated" } });
     return NextResponse.json({ ok: true });
-  } catch (e: unknown) { return NextResponse.json({ error: (e as Error).message }, { status: (e as { status?: number }).status || 400 }); }
+  } catch (e: unknown) { return apiError(e); }
 }

@@ -1,3 +1,4 @@
+import { apiError } from "@/lib/apiError";
 import { db } from "@/lib/db";
 import { requireRight } from "@/lib/auth";
 import { z } from "zod";
@@ -45,9 +46,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     return NextResponse.json(product);
   } catch (e: unknown) {
-    return NextResponse.json(
-      { error: (e as Error).message },
-      { status: (e as { status?: number }).status || 400 },
-    );
+    return apiError(e);
   }
 }

@@ -15,6 +15,7 @@ import { LineItems, docTotals, DocLine } from "@/components/ui/LineItems";
 import { fmt } from "@/lib/currency";
 import { getCompanyInfo, invoiceDoc, openPrintWindow, InvoicePrintData } from "@/lib/printDoc";
 import { fetchArray } from "@/lib/fetchJson";
+import { toast } from "sonner";
 
 interface Customer { id: string; name: string }
 interface SalePerson { id: string; name: string }
@@ -49,7 +50,7 @@ export default function InvoicesPage() {
     (!statusFilter || r.status === statusFilter) && (!q || r.no.toLowerCase().includes(q.toLowerCase()) || r.customerName.toLowerCase().includes(q.toLowerCase()))
   );
 
-  const reset = () => { setHead({ customerId: "", salePersonId: "", locationId: "", orderId: "", date: new Date().toISOString().slice(0, 10), dueDate: new Date().toISOString().slice(0, 10) }); setLines([blankLine]); setError(""); };
+  const reset = () => { setHead({ customerId: "", salePersonId: "", locationId: "", orderId: "", date: new Date().toISOString().slice(0, 10), dueDate: new Date().toISOString().slice(0, 10) }); setLines([blankLine]); toast.error(""); };
 
   const save = useMutation({
     mutationFn: () => fetch("/api/invoices", {
@@ -60,8 +61,8 @@ export default function InvoicesPage() {
         lines: lines.filter((l) => l.productId).map((l) => ({ productId: l.productId, qty: parseInt(l.qty) || 0, rate: parseFloat(l.rate) || 0, discount: parseFloat(l.disc) || 0, vatRate: parseFloat(l.vat) || 0 })),
       }),
     }).then(async (r) => { if (!r.ok) throw new Error((await r.json()).error || "Failed to post invoice"); return r.json(); }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices"] }); setShow(false); reset(); },
-    onError: (e: Error) => setError(e.message),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices"] }); setShow(false); reset(); toast.success("Invoice saved."); },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const valid = head.customerId && head.locationId && lines.some((l) => l.productId);
@@ -74,7 +75,7 @@ export default function InvoicesPage() {
       const inv: InvoicePrintData = await res.json();
       openPrintWindow(`Invoice ${inv.no}`, invoiceDoc(getCompanyInfo(preferences), inv));
     } catch (e: unknown) {
-      setError((e as Error).message);
+      toast.error((e as Error).message);
     } finally {
       setPrintingId(null);
     }

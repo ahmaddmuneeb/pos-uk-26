@@ -1,3 +1,4 @@
+import { apiError } from "@/lib/apiError";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { NextResponse } from "next/server";
@@ -33,9 +34,6 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ qtyIn, qtyOut, balance });
   } catch (e: unknown) {
-    return NextResponse.json(
-      { error: (e as Error).message },
-      { status: (e as { status?: number }).status || 500 },
-    );
+    return apiError(e);
   }
 }

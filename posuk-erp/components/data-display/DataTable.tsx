@@ -20,7 +20,7 @@ interface DataTableProps<T = Record<string, unknown>> {
 
 export function DataTable<T = Record<string, unknown>>({ columns, rows, rowKey, empty = "No records", style }: DataTableProps<T>) {
   return (
-    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--fs-base)", ...style }}>
+    <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", fontSize: "var(--fs-base)", ...style }}>
       <thead>
         <tr>
           {columns.map((c) => (

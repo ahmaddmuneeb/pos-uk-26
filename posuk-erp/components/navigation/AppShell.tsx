@@ -5,6 +5,7 @@ import { signOut } from "next-auth/react";
 import { BrandMark } from "@/components/core/BrandMark";
 import { Button } from "@/components/core/Button";
 import { NavItem } from "./NavItem";
+import { CurrencySync } from "@/components/ui/CurrencySync";
 
 const NAV = [
   { section: "Overview", items: [{ key: "/dashboard", label: "Dashboard" }] },
@@ -79,6 +80,7 @@ export function AppShell({ user, children }: AppShellProps) {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "var(--bg-base)", backgroundImage: "var(--wash-app)" }}>
+      <CurrencySync />
       <aside style={{ width: "var(--sidebar-w)", flexShrink: 0, background: "linear-gradient(180deg, var(--bg-elevated) 0%, #0d1424 100%)", borderRight: "1px solid var(--border)", padding: "1.25rem 0.875rem 1.5rem", display: "flex", flexDirection: "column", height: "100vh", position: "sticky", top: 0, overflowY: "auto" }}>
         <div style={{ paddingBottom: "1.1rem", marginBottom: "0.25rem", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
           <BrandMark size={36} showWordmark />

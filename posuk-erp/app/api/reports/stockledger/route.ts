@@ -1,3 +1,4 @@
+import { apiError } from "@/lib/apiError";
 import { db } from "@/lib/db";
 import { requireRight } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -35,6 +36,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(rows);
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message }, { status: (e as { status?: number }).status || 500 });
+    return apiError(e);
   }
 }

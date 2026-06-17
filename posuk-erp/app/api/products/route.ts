@@ -1,3 +1,4 @@
+import { apiError } from "@/lib/apiError";
 import { db } from "@/lib/db";
 import { requireRight } from "@/lib/auth";
 import { z } from "zod";
@@ -51,10 +52,7 @@ export async function GET() {
 
     return NextResponse.json(rows);
   } catch (e: unknown) {
-    return NextResponse.json(
-      { error: (e as Error).message },
-      { status: (e as { status?: number }).status || 500 },
-    );
+    return apiError(e);
   }
 }
 
@@ -83,9 +81,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json(product, { status: 201 });
   } catch (e: unknown) {
-    return NextResponse.json(
-      { error: (e as Error).message },
-      { status: (e as { status?: number }).status || 400 },
-    );
+    return apiError(e);
   }
 }
