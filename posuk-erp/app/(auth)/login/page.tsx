@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { BrandMark } from "@/components/core/BrandMark";
 import { Button } from "@/components/core/Button";
 import { Input } from "@/components/forms/Input";
@@ -39,7 +40,7 @@ export default function LoginPage() {
           <Field label="Username">
             <Input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoFocus required />
           </Field>
-          <Field label="Password">
+          <Field label="Password" hint={<Link href="/forgot-password" style={{ color: "var(--accent)", textDecoration: "none", fontSize: "var(--fs-xs)" }}>Forgot password?</Link>}>
             <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
           </Field>
           {error && <p style={{ margin: 0, color: "var(--danger)", fontSize: "var(--fs-sm)" }}>{error}</p>}

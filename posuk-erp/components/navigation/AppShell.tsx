@@ -1,10 +1,9 @@
 "use client";
 import React, { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
 import { BrandMark } from "@/components/core/BrandMark";
-import { Button } from "@/components/core/Button";
 import { NavItem } from "./NavItem";
+import { ProfileDropdown } from "./ProfileDropdown";
 import { CurrencySync } from "@/components/ui/CurrencySync";
 import { RightsContext, RightsMap } from "@/components/auth/RightsContext";
 import {
@@ -116,7 +115,6 @@ export function AppShell({ user, rights, children }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
-  const initials = user.fullName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
   const isActive = (key: string) => pathname === key || pathname.startsWith(key + "/");
 
@@ -232,14 +230,7 @@ export function AppShell({ user, rights, children }: AppShellProps) {
             <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>
               <strong style={{ color: "var(--text-subtle)", fontWeight: 600 }}>Branch</strong> · {user.branchName}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-              <span style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--primary)", display: "grid", placeItems: "center", fontSize: "0.72rem", fontWeight: 700, color: "#fff" }}>{initials}</span>
-              <div style={{ lineHeight: 1.15 }}>
-                <div style={{ fontSize: "var(--fs-base)", fontWeight: 600, color: "var(--text)" }}>{user.fullName}</div>
-                <div style={{ fontSize: "var(--fs-2xs)", color: "var(--text-subtle)" }}>{user.role}</div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: "/login" })}>Log out</Button>
-            </div>
+            <ProfileDropdown user={user} />
           </header>
           <main style={{ padding: "1.25rem", flex: 1, minWidth: 0 }}>{children}</main>
         </div>
