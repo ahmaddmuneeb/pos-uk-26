@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/apiError";
+import { sendPasswordReset } from "@/lib/email";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
@@ -24,6 +25,7 @@ export async function POST(req: Request) {
       db.user.update({ where: { id: reset.userId }, data: { passwordHash } }),
       db.passwordResetToken.update({ where: { id: reset.id }, data: { used: true } }),
     ]);
+    void sendPasswordReset(reset.user).catch(() => {});
     return NextResponse.json({ ok: true });
   } catch (e: unknown) { return apiError(e); }
 }

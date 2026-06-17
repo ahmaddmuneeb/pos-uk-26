@@ -3,6 +3,7 @@ import type { NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
+import { sendLoginAlert } from "@/lib/email";
 
 declare module "next-auth" {
   interface Session {
@@ -54,6 +55,7 @@ const authConfig: NextAuthConfig = {
         const ok = await bcrypt.compare(credentials.password as string, user.passwordHash);
         if (!ok) return null;
         await db.user.update({ where: { id: user.id }, data: { lastLogin: new Date() } });
+        void sendLoginAlert(user).catch(() => {});
         return {
           id: user.id,
           username: user.username,

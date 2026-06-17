@@ -1,6 +1,7 @@
 import { apiError } from "@/lib/apiError";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { sendPasswordChanged } from "@/lib/email";
 import { z } from "zod";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
@@ -19,6 +20,7 @@ export async function POST(req: Request) {
     if (!valid) throw new Error("Current password is incorrect.");
     const passwordHash = await bcrypt.hash(newPassword, 12);
     await db.user.update({ where: { id: session.id }, data: { passwordHash } });
+    void sendPasswordChanged(user).catch(() => {});
     return NextResponse.json({ ok: true });
   } catch (e: unknown) { return apiError(e); }
 }
