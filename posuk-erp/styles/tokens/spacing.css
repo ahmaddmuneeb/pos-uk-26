@@ -1,0 +1,26 @@
+/* ——— Spacing & radii ———
+   The product is built on a 4px rhythm expressed mostly in rem.
+   Radii are generous-but-controlled: 8px controls, 12px cards. */
+:root {
+  /* Spacing scale */
+  --space-1: 0.25rem;  /* 4 */
+  --space-2: 0.35rem;  /* 5.6 — the product's signature tight gap */
+  --space-3: 0.5rem;   /* 8 */
+  --space-4: 0.65rem;  /* 10.4 */
+  --space-5: 0.75rem;  /* 12 */
+  --space-6: 1rem;     /* 16 */
+  --space-7: 1.25rem;  /* 20 — card padding, main padding */
+  --space-8: 1.5rem;   /* 24 */
+  --space-9: 2rem;     /* 32 */
+
+  /* Radii */
+  --radius-sm: 8px;   /* inputs, buttons, nav items, chips */
+  --radius: 12px;     /* cards, modals */
+  --radius-lg: 16px;  /* login panel */
+  --radius-pill: 999px;
+
+  /* Layout constants */
+  --sidebar-w: 252px;
+  --topbar-h: 56px;
+  --content-max: 960px;
+}

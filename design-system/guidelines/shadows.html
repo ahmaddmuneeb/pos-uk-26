@@ -1,0 +1,23 @@
+<!-- @dsCard group="Spacing" viewport="700x180" name="Shadows & glows" subtitle="Deep soft shadows for elevation; cyan glow for brand emphasis" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; font-family: var(--font); background: var(--bg-base); color: var(--text); padding: 26px; }
+  .row { display: flex; gap: 22px; align-items: center; }
+  .box { width: 120px; height: 76px; border-radius: var(--radius); background: var(--bg-card-solid); border: 1px solid var(--border); display: grid; place-items: center; font-size: var(--fs-xs); color: var(--text-muted); }
+  .cta { background: var(--primary); color: #fff; border: none; font-weight: 600; }
+  .l { font-family: var(--font-mono); font-size: 10px; color: var(--text-subtle); margin-top: 8px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="row">
+  <div><div class="box" style="box-shadow:var(--shadow)">card</div><div class="l">--shadow</div></div>
+  <div><div class="box" style="box-shadow:var(--shadow-lg)">modal</div><div class="l">--shadow-lg</div></div>
+  <div><div class="box cta" style="box-shadow:var(--glow-primary)">primary</div><div class="l">--glow-primary</div></div>
+  <div><div class="box" style="box-shadow:var(--ring);border-color:var(--accent-dim)">focus</div><div class="l">--ring</div></div>
+</div>
+</body>
+</html>

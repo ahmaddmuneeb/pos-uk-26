@@ -1,0 +1,22 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Text ramp" subtitle="Three-step light-on-dark text hierarchy" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; font-family: var(--font); background: var(--bg-card-solid); padding: 24px; }
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .line { display: flex; align-items: baseline; gap: 14px; }
+  .big { font-size: 1.3rem; font-weight: var(--fw-bold); letter-spacing: var(--tracking-snug); }
+  .tok { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-subtle); }
+</style>
+</head>
+<body>
+<div class="stack">
+  <div class="line"><span class="big" style="color:var(--text)">Primary — invoices, names, values</span><span class="tok">--text · #e8eef7</span></div>
+  <div class="line"><span class="big" style="color:var(--text-muted)">Muted — labels, body, table cells</span><span class="tok">--text-muted · #94a3b8</span></div>
+  <div class="line"><span class="big" style="color:var(--text-subtle)">Subtle — captions, placeholders, overlines</span><span class="tok">--text-subtle · #64748b</span></div>
+</div>
+</body>
+</html>

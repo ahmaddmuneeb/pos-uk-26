@@ -1,0 +1,23 @@
+<!-- @dsCard group="Spacing" viewport="700x160" name="Radii" subtitle="8px controls · 12px cards · 16px login · pill badges" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; font-family: var(--font); background: var(--bg-base); color: var(--text); padding: 22px; }
+  .row { display: flex; gap: 18px; align-items: flex-end; }
+  .box { width: 72px; height: 72px; background: var(--bg-card-solid); border: 1px solid var(--border-strong); }
+  .l { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-subtle); margin-top: 8px; }
+  .pill { width: 96px; height: 34px; }
+</style>
+</head>
+<body>
+<div class="row">
+  <div><div class="box" style="border-radius:var(--radius-sm)"></div><div class="l">sm · 8px</div></div>
+  <div><div class="box" style="border-radius:var(--radius)"></div><div class="l">base · 12px</div></div>
+  <div><div class="box" style="border-radius:var(--radius-lg)"></div><div class="l">lg · 16px</div></div>
+  <div><div class="box pill" style="border-radius:var(--radius-pill)"></div><div class="l">pill · 999px</div></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,316 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Administration ----------
+model Branch {
+  id        String      @id @default(cuid())
+  code      String      @unique
+  name      String
+  phone     String?
+  vat       String?
+  address   String?
+  isHead    Boolean     @default(false)
+  active    Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  users     User[]
+  invoices  Invoice[]
+  orders    SaleOrder[]
+}
+
+model User {
+  id            String        @id @default(cuid())
+  username      String        @unique
+  fullName      String
+  passwordHash  String
+  role          Role          @relation(fields: [roleId], references: [id])
+  roleId        String
+  branch        Branch        @relation(fields: [branchId], references: [id])
+  branchId      String
+  status        String        @default("Active")
+  mustChangePwd Boolean       @default(false)
+  lastLogin     DateTime?
+  createdAt     DateTime      @default(now())
+  activities    ActivityLog[]
+}
+
+model Role {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  rights Right[]
+  users  User[]
+}
+
+model Right {
+  id      String  @id @default(cuid())
+  role    Role    @relation(fields: [roleId], references: [id])
+  roleId  String
+  screen  String
+  view    Boolean @default(false)
+  create  Boolean @default(false)
+  edit    Boolean @default(false)
+  delete  Boolean @default(false)
+  print   Boolean @default(false)
+
+  @@unique([roleId, screen])
+}
+
+model Preference {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
+
+// ---------- Company ----------
+model CustomerType {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  customers Customer[]
+}
+
+model Customer {
+  id         String        @id @default(cuid())
+  code       String        @unique
+  name       String
+  contact    String?
+  type       CustomerType  @relation(fields: [typeId], references: [id])
+  typeId     String
+  phone      String?
+  whatsapp   String?
+  email      String?
+  vat        String?
+  city       String?
+  postcode   String?
+  address    String?
+  active     Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+  invoices   Invoice[]
+  orders     SaleOrder[]
+  receipts   Receipt[]
+  ledger     LedgerEntry[]
+}
+
+model SalePerson {
+  id          String      @id @default(cuid())
+  name        String
+  designation String?
+  region      String?
+  commission  Decimal     @default(0) @db.Decimal(5, 2)
+  status      String      @default("Active")
+  invoices    Invoice[]
+  orders      SaleOrder[]
+}
+
+model Receipt {
+  id         String        @id @default(cuid())
+  code       String        @unique
+  customer   Customer      @relation(fields: [customerId], references: [id])
+  customerId String
+  amount     Decimal       @db.Decimal(12, 2)
+  mode       String
+  reference  String?
+  date       DateTime
+  createdAt  DateTime      @default(now())
+  ledger     LedgerEntry[]
+}
+
+// ---------- Product ----------
+model Category {
+  id       String        @id @default(cuid())
+  code     String        @unique
+  name     String
+  active   Boolean       @default(true)
+  subs     SubCategory[]
+  products Product[]
+}
+
+model SubCategory {
+  id       String    @id @default(cuid())
+  code     String    @unique
+  name     String
+  parent   Category  @relation(fields: [parentId], references: [id])
+  parentId String
+  products Product[]
+}
+
+model Uom {
+  id       String    @id @default(cuid())
+  code     String    @unique
+  name     String
+  products Product[]
+}
+
+model Location {
+  id    String        @id @default(cuid())
+  code  String        @unique
+  name  String
+  stock StockLedger[]
+}
+
+model Product {
+  id            String          @id @default(cuid())
+  sku           String          @unique
+  name          String
+  type          String          @default("Finished")
+  category      Category        @relation(fields: [categoryId], references: [id])
+  categoryId    String
+  sub           SubCategory     @relation(fields: [subId], references: [id])
+  subId         String
+  uom           Uom             @relation(fields: [uomId], references: [id])
+  uomId         String
+  purchaseRate  Decimal         @db.Decimal(12, 2)
+  wholesaleRate Decimal         @db.Decimal(12, 2)
+  retailRate    Decimal         @db.Decimal(12, 2)
+  reorderLevel  Int             @default(0)
+  barcode       String?
+  active        Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  stock         StockLedger[]
+  invoiceLines  InvoiceLine[]
+  orderLines    SaleOrderLine[]
+  returnLines   SaleReturnLine[]
+}
+
+model StockLedger {
+  id         String   @id @default(cuid())
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  String
+  location   Location @relation(fields: [locationId], references: [id])
+  locationId String
+  qtyIn      Int      @default(0)
+  qtyOut     Int      @default(0)
+  docType    String
+  docNo      String
+  date       DateTime @default(now())
+}
+
+// ---------- Sales ----------
+model SaleOrder {
+  id           String          @id @default(cuid())
+  no           String          @unique
+  branch       Branch          @relation(fields: [branchId], references: [id])
+  branchId     String
+  customer     Customer        @relation(fields: [customerId], references: [id])
+  customerId   String
+  salePerson   SalePerson?     @relation(fields: [salePersonId], references: [id])
+  salePersonId String?
+  date         DateTime
+  subtotal     Decimal         @db.Decimal(12, 2)
+  vatTotal     Decimal         @db.Decimal(12, 2)
+  grandTotal   Decimal         @db.Decimal(12, 2)
+  status       String          @default("Open")
+  createdAt    DateTime        @default(now())
+  lines        SaleOrderLine[]
+  invoices     Invoice[]
+}
+
+model SaleOrderLine {
+  id        String    @id @default(cuid())
+  order     SaleOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+  product   Product   @relation(fields: [productId], references: [id])
+  productId String
+  qty       Int
+  rate      Decimal   @db.Decimal(12, 2)
+  discount  Decimal   @default(0) @db.Decimal(5, 2)
+  vatRate   Decimal   @default(20) @db.Decimal(5, 2)
+  lineTotal Decimal   @db.Decimal(12, 2)
+}
+
+model Invoice {
+  id           String        @id @default(cuid())
+  no           String        @unique
+  branch       Branch        @relation(fields: [branchId], references: [id])
+  branchId     String
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  customerId   String
+  salePerson   SalePerson?   @relation(fields: [salePersonId], references: [id])
+  salePersonId String?
+  order        SaleOrder?    @relation(fields: [orderId], references: [id])
+  orderId      String?
+  locationId   String
+  date         DateTime
+  dueDate      DateTime
+  subtotal     Decimal       @db.Decimal(12, 2)
+  vatTotal     Decimal       @db.Decimal(12, 2)
+  grandTotal   Decimal       @db.Decimal(12, 2)
+  paidTotal    Decimal       @default(0) @db.Decimal(12, 2)
+  status       String        @default("Draft")
+  notes        String?
+  createdAt    DateTime      @default(now())
+  lines        InvoiceLine[]
+  returns      SaleReturn[]
+  ledger       LedgerEntry[]
+}
+
+model InvoiceLine {
+  id        String  @id @default(cuid())
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId String
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  qty       Int
+  rate      Decimal @db.Decimal(12, 2)
+  discount  Decimal @default(0) @db.Decimal(5, 2)
+  vatRate   Decimal @default(20) @db.Decimal(5, 2)
+  lineTotal Decimal @db.Decimal(12, 2)
+}
+
+model SaleReturn {
+  id         String           @id @default(cuid())
+  no         String           @unique
+  invoice    Invoice          @relation(fields: [invoiceId], references: [id])
+  invoiceId  String
+  date       DateTime
+  reason     String?
+  subtotal   Decimal          @db.Decimal(12, 2)
+  vatTotal   Decimal          @db.Decimal(12, 2)
+  grandTotal Decimal          @db.Decimal(12, 2)
+  createdAt  DateTime         @default(now())
+  lines      SaleReturnLine[]
+  ledger     LedgerEntry[]
+}
+
+model SaleReturnLine {
+  id        String     @id @default(cuid())
+  ret       SaleReturn @relation(fields: [retId], references: [id], onDelete: Cascade)
+  retId     String
+  product   Product    @relation(fields: [productId], references: [id])
+  productId String
+  qty       Int
+  rate      Decimal    @db.Decimal(12, 2)
+  vatRate   Decimal    @default(20) @db.Decimal(5, 2)
+  lineTotal Decimal    @db.Decimal(12, 2)
+}
+
+model LedgerEntry {
+  id         String      @id @default(cuid())
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  customerId String
+  date       DateTime    @default(now())
+  docType    String
+  docNo      String
+  invoiceId  String?
+  invoice    Invoice?    @relation(fields: [invoiceId], references: [id])
+  receiptId  String?
+  receipt    Receipt?    @relation(fields: [receiptId], references: [id])
+  returnId   String?
+  saleReturn SaleReturn? @relation(fields: [returnId], references: [id])
+  narration  String?
+  debit      Decimal     @default(0) @db.Decimal(12, 2)
+  credit     Decimal     @default(0) @db.Decimal(12, 2)
+}
+
+model ActivityLog {
+  id      String   @id @default(cuid())
+  user    User     @relation(fields: [userId], references: [id])
+  userId  String
+  docType String
+  docNo   String
+  action  String
+  at      DateTime @default(now())
+}

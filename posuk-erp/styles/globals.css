@@ -1,0 +1,52 @@
+@import "./tokens/fonts.css";
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "./tokens/effects.css";
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg-base);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  line-height: var(--leading-normal);
+}
+
+input, select, textarea, button { font-family: inherit; }
+
+:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* print */
+@media print {
+  .no-print { display: none !important; }
+
+  html, body { background: #fff !important; height: auto; }
+
+  body * { visibility: hidden; }
+  main, main * { visibility: visible; }
+
+  main {
+    position: absolute; inset: 0; padding: 0; margin: 0; width: 100%;
+  }
+
+  main section {
+    background: #fff !important; color: #000 !important;
+    border: none !important; box-shadow: none !important;
+  }
+
+  main h2, main h3, main p, main span, main div, main td, main th {
+    color: #000 !important;
+  }
+
+  main table { border-collapse: collapse; width: 100%; }
+  main th, main td { border-bottom: 1px solid #ccc !important; }
+}

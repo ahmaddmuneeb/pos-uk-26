@@ -1,0 +1,25 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Semantic status" subtitle="Success, warning, danger, info — each with a tinted fill" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; font-family: var(--font); background: var(--bg-base); padding: 20px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .cell { border-radius: var(--radius-sm); padding: 12px; border: 1px solid var(--border); }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+  .name { color: var(--text); font-size: var(--fs-sm); font-weight: var(--fw-semibold); display: inline; }
+  .hex { color: var(--text-subtle); font-size: var(--fs-xs); font-family: var(--font-mono); margin-top: 10px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: var(--radius-pill); font-size: var(--fs-xs); font-weight: var(--fw-semibold); margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="grid">
+  <div class="cell" style="background:var(--success-bg)"><span class="dot" style="background:var(--success)"></span><span class="name">Success</span><div class="hex">#34d399</div></div>
+  <div class="cell" style="background:var(--warning-bg)"><span class="dot" style="background:var(--warning)"></span><span class="name">Warning</span><div class="hex">#fbbf24</div></div>
+  <div class="cell" style="background:var(--danger-bg)"><span class="dot" style="background:var(--danger)"></span><span class="name">Danger</span><div class="hex">#f87171</div></div>
+  <div class="cell" style="background:var(--info-bg)"><span class="dot" style="background:var(--info)"></span><span class="name">Info</span><div class="hex">#22d3ee</div></div>
+</div>
+</body>
+</html>

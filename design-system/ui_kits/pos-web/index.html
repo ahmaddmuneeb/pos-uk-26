@@ -1,0 +1,88 @@
+<!-- @dsCard group="POS Web App" viewport="1280x760" name="POS / ERP web app" subtitle="Interactive recreation — all modules, screens & reports per PRD" -->
+<!-- @startingPoint section="POS Web App" subtitle="Full POS/ERP web app — all modules, screens and reports" viewport="1280x800" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>POS / ERP — UK</title>
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  html, body { margin: 0; height: 100%; background: var(--bg-base); color: var(--text); font-family: var(--font); }
+  * { box-sizing: border-box; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.18); border-radius: 999px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script src="data.js"></script>
+<script type="text/babel" src="kit.jsx"></script>
+<script type="text/babel" src="shell.jsx"></script>
+<script type="text/babel" src="screens-core.jsx"></script>
+<script type="text/babel" src="screens-company.jsx"></script>
+<script type="text/babel" src="screens-product.jsx"></script>
+<script type="text/babel" src="screens-sales.jsx"></script>
+<script type="text/babel" src="screens-admin.jsx"></script>
+<script type="text/babel">
+  const TITLES = Object.fromEntries(window.POS_NAV.flatMap((g) => [...g.items, ...(g.reports || [])]));
+  function App() {
+    const [authed, setAuthed] = React.useState(false);
+    const [route, setRoute] = React.useState("dashboard");
+    const go = (r) => setRoute(r);
+    if (!authed) return <window.LoginScreen onLogin={() => { setAuthed(true); setRoute("dashboard"); }} />;
+
+    const W = window;
+    const ROUTES = {
+      dashboard: () => <W.DashboardScreen go={go} />,
+      // Company
+      customers: () => <W.CustomersScreen />,
+      custtypes: () => <W.CustomerTypesScreen />,
+      receipts: () => <W.ReceiptsScreen />,
+      salepersons: () => <W.SalePersonsScreen />,
+      "rpt-ledger": () => <W.LedgerReport />,
+      "rpt-receivable": () => <W.ReceivableReport />,
+      // Product
+      categories: () => <W.CategoriesScreen />,
+      subcategories: () => <W.SubCategoriesScreen />,
+      products: () => <W.ProductsScreen />,
+      locations: () => <W.LocationsScreen />,
+      uoms: () => <W.UomsScreen />,
+      "rpt-stocksummary": () => <W.StockSummaryReport />,
+      "rpt-currentstock": () => <W.CurrentStockReport />,
+      "rpt-stockledger": () => <W.StockLedgerReport />,
+      "rpt-productlist": () => <W.ProductListReport />,
+      "rpt-reorder": () => <W.ReorderReport />,
+      "rpt-barcode": () => <W.BarcodeReport />,
+      // Sales
+      orders: () => <W.OrdersScreen />,
+      invoices: () => <W.InvoicesScreen />,
+      returns: () => <W.ReturnsScreen />,
+      "rpt-saleregister": () => <W.SaleRegisterReport />,
+      "rpt-returnregister": () => <W.ReturnRegisterReport />,
+      // Administration
+      branches: () => <W.BranchesScreen />,
+      users: () => <W.UsersScreen />,
+      userrights: () => <W.UserRightsScreen />,
+      preferences: () => <W.PreferencesScreen />,
+      import: () => <W.ImportScreen />,
+      "rpt-useractivity": () => <W.UserActivityReport />,
+      "rpt-activeusers": () => <W.ActiveUsersReport />,
+      "rpt-userslist": () => <W.UsersListReport />,
+    };
+    const render = ROUTES[route] || (() => <W.PlaceholderScreen title={TITLES[route] || "Screen"} />);
+    return (
+      <window.AppShell route={route} onNavigate={setRoute} onLogout={() => setAuthed(false)}>
+        {render()}
+      </window.AppShell>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

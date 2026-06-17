@@ -1,0 +1,61 @@
+<!-- @dsCard group="Components" viewport="700x300" name="Cards, stats, badges, tabs, table" subtitle="Data-display primitives that frame every screen" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  body { margin: 0; background: var(--bg-base); color: var(--text); font-family: var(--font);
+         padding: 22px; background-image: var(--wash-app); }
+  .wrap { display: flex; flex-direction: column; gap: 16px; max-width: 660px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .badges { display: flex; gap: 8px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script type="text/babel">
+  const { Card, StatCard, Badge, Tabs, DataTable } = window.POSUKDesignSystem_85bb4f;
+  function Demo() {
+    const [tab, setTab] = React.useState("sale");
+    return (
+      <div className="wrap">
+        <div className="stats">
+          <StatCard label="Invoices total" value="£48,210" meta="128 documents" />
+          <StatCard label="Receipts total" value="£39,540" meta="96 documents" />
+          <StatCard label="Customers with AR" value="37" accent />
+        </div>
+        <Card title="Sale invoices" actions={<Tabs value={tab} onChange={setTab} tabs={[{value:"sale",label:"Sale"},{value:"return",label:"Return"}]} />}>
+          <div className="badges" style={{ marginBottom: 12 }}>
+            <Badge tone="success">Paid</Badge>
+            <Badge tone="warning">Partial</Badge>
+            <Badge tone="danger">Overdue</Badge>
+            <Badge tone="info">Draft</Badge>
+            <Badge tone="neutral">Inactive</Badge>
+          </div>
+          <DataTable
+            rowKey={(r) => r.no}
+            columns={[
+              { key: "no", header: "No" },
+              { key: "customer", header: "Customer" },
+              { key: "total", header: "Total", align: "right" },
+              { key: "status", header: "Status", render: (r) => <Badge tone={r.tone}>{r.status}</Badge> },
+            ]}
+            rows={[
+              { no: "INV-1042", customer: "Acme Trading Ltd", total: "£1,240.00", status: "Paid", tone: "success" },
+              { no: "INV-1043", customer: "Brightwell & Co", total: "£860.50", status: "Partial", tone: "warning" },
+              { no: "INV-1044", customer: "Corner Shop", total: "£312.00", status: "Overdue", tone: "danger" },
+            ]}
+          />
+        </Card>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+/* ——— Effects: shadows, glows, blur, motion ———
+   Shadows are deep and soft (dark UI). The accent "glow" is the
+   brand's signature — a cyan halo on marks, focus rings, primary CTAs. */
+:root {
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 24px 48px rgba(0, 0, 0, 0.45);
+
+  /* Brand glows */
+  --glow-accent: 0 0 20px var(--accent-glow);
+  --glow-primary: 0 2px 12px rgba(6, 182, 212, 0.25);
+  --glow-primary-hover: 0 4px 20px rgba(6, 182, 212, 0.35);
+
+  /* Focus ring */
+  --ring: 0 0 0 3px var(--accent-glow);
+
+  /* Backdrop blur — topbar glass, modal scrim */
+  --blur: blur(12px); /* @kind other */
+
+  /* Ambient page wash — radial cyan/blue bloom on app & login backgrounds */
+  --wash-app:
+    radial-gradient(ellipse 120% 80% at 70% -20%, rgba(34, 211, 238, 0.08), transparent 50%),
+    radial-gradient(ellipse 80% 60% at 0% 100%, rgba(59, 130, 246, 0.06), transparent 45%); /* @kind other */
+  --wash-login:
+    radial-gradient(ellipse 100% 80% at 50% -30%, rgba(34, 211, 238, 0.12), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 100% 100%, rgba(59, 130, 246, 0.10), transparent 50%); /* @kind other */
+
+  /* Motion — short, functional, ease */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1); /* @kind other */
+  --dur-fast: 0.1s; /* @kind other */
+  --dur: 0.15s; /* @kind other */
+}

@@ -1,0 +1,49 @@
+/* ——— Colors ———
+   POS UK is a single dark theme. A deep navy canvas with layered
+   elevated surfaces, a cyan→blue accent, and slate-grey text ramp. */
+:root {
+  /* Base canvas + elevation ladder */
+  --bg-base: #0c1222;            /* app background (deepest) */
+  --bg-elevated: #111827;        /* sidebar / topbar */
+  --bg-surface: #151f32;         /* inputs, modal body */
+  --bg-card: rgba(255, 255, 255, 0.04); /* translucent card fill */
+  --bg-card-solid: #1a2438;      /* solid card fill */
+
+  /* Borders */
+  --border: rgba(148, 163, 184, 0.12);        /* default hairline */
+  --border-strong: rgba(56, 189, 248, 0.22);  /* accented / active */
+
+  /* Text ramp (light-on-dark) */
+  --text: #e8eef7;        /* primary */
+  --text-muted: #94a3b8;  /* secondary / labels */
+  --text-subtle: #64748b; /* tertiary / placeholder, captions */
+
+  /* Accent (cyan) */
+  --accent: #22d3ee;
+  --accent-dim: #0891b2;
+  --accent-glow: rgba(34, 211, 238, 0.15);
+
+  /* Brand gradient — the signature cyan→blue used on marks & primary buttons */
+  --primary: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); /* @kind color */
+  --grad-cyan: #06b6d4;
+  --grad-blue: #3b82f6;
+
+  /* Semantic status */
+  --success: #34d399;
+  --success-bg: rgba(52, 211, 153, 0.12);
+  --warning: #fbbf24;
+  --warning-bg: rgba(251, 191, 36, 0.12);
+  --danger: #f87171;
+  --danger-bg: rgba(248, 113, 113, 0.12);
+  --info: #22d3ee;
+  --info-bg: rgba(34, 211, 238, 0.10);
+
+  /* ——— Semantic aliases (use these in product code) ——— */
+  --surface-app: var(--bg-base);
+  --surface-card: var(--bg-card-solid);
+  --surface-input: var(--bg-surface);
+  --text-body: var(--text);
+  --text-label: var(--text-muted);
+  --text-placeholder: var(--text-subtle);
+  --focus-ring: var(--accent-glow);
+}

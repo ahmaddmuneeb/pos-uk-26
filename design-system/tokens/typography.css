@@ -1,0 +1,33 @@
+/* ——— Typography ———
+   One family does everything: Plus Jakarta Sans. A mono face
+   (JetBrains Mono) is used only for code / raw payloads. */
+:root {
+  --font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: var(--font);
+
+  /* Weights */
+  --fw-regular: 400;    /* @kind font */
+  --fw-medium: 500;     /* @kind font */
+  --fw-semibold: 600;   /* @kind font */
+  --fw-bold: 700;       /* @kind font */
+  --fw-extrabold: 800;  /* @kind font */
+
+  /* Type scale (rem) — dense, application-grade */
+  --fs-2xs: 0.65rem;   /* 10.4px — nav-section / overline / dt */
+  --fs-xs: 0.72rem;    /* 11.5px — table head, captions */
+  --fs-sm: 0.8rem;     /* 12.8px — meta, inline fields */
+  --fs-base: 0.875rem; /* 14px   — body, nav, inputs */
+  --fs-md: 0.95rem;    /* 15.2px — emphasised body */
+  --fs-lg: 1.15rem;    /* 18.4px — card titles (h2) */
+  --fs-xl: 1.35rem;    /* 21.6px — page / stat values */
+
+  /* Tracking */
+  --tracking-tight: -0.03em;  /* large headings */
+  --tracking-snug: -0.02em;   /* titles */
+  --tracking-wide: 0.04em;    /* table heads */
+  --tracking-wider: 0.1em;    /* nav-section overlines */
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+}
