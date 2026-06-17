@@ -16,7 +16,7 @@ import { fmt } from "@/lib/currency";
 import { getCompanyInfo, invoiceDoc, openPrintWindow, InvoicePrintData } from "@/lib/printDoc";
 import { fetchArray } from "@/lib/fetchJson";
 import { toast } from "sonner";
-import { Eye, Printer, Trash2 } from "lucide-react";
+import { Eye, Printer, Trash2, RefreshCw } from "lucide-react";
 
 interface Customer { id: string; name: string }
 interface SalePerson { id: string; name: string }
@@ -47,6 +47,8 @@ export default function InvoicesPage() {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; no: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [statusModal, setStatusModal] = useState<{ id: string; no: string; status: string } | null>(null);
+  const [newStatus, setNewStatus] = useState("");
 
   const t = docTotals(lines, true);
   const normProducts = products.map((p) => ({ id: p.id, sku: p.sku, name: p.name, wholesaleRate: typeof p.wholesaleRate === "string" ? parseFloat(p.wholesaleRate) : p.wholesaleRate }));
@@ -75,6 +77,23 @@ export default function InvoicesPage() {
         if (!r.ok) throw new Error((await r.json()).error || "Failed to delete");
       }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices"] }); setConfirmDelete(null); },
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      fetch(`/api/invoices/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      }).then(async (r) => {
+        if (!r.ok) throw new Error((await r.json()).error || "Failed to update status");
+      }),
+    onSuccess: (_data, { status }) => {
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      setStatusModal(null);
+      toast.success(`Status updated to "${status}".`);
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const loadInvoice = async (id: string): Promise<InvoicePrintData | null> => {
@@ -127,11 +146,12 @@ export default function InvoicesPage() {
     { key: "outstanding", header: "Outstanding", align: "right", render: (r) => fmt(r.outstanding as number) },
     { key: "status", header: "Status", render: (r) => <Badge tone={statusTone[r.status as string] || "neutral"}>{r.status as string}</Badge> },
     {
-      key: "act", header: "Actions", align: "right", width: 100,
+      key: "act", header: "Actions", align: "right", width: 120,
       render: (r) => (
         <span className="no-print" style={{ display: "inline-flex", gap: 4, justifyContent: "flex-end" }}>
           <IconButton label="View" size="sm" disabled={loadingId === r.id} onClick={() => openView(r.id as string)}><Eye size={14} color="#38bdf8" /></IconButton>
           <IconButton label="Print" size="sm" disabled={loadingId === r.id} onClick={() => printInvoice(r.id as string)}><Printer size={14} color="#a78bfa" /></IconButton>
+          <IconButton label="Update status" size="sm" onClick={() => { setStatusModal({ id: r.id as string, no: r.no as string, status: r.status as string }); setNewStatus(r.status as string); }}><RefreshCw size={14} color="#4ade80" /></IconButton>
           <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete({ id: r.id as string, no: r.no as string })}><Trash2 size={14} color="#f87171" /></IconButton>
         </span>
       ),
@@ -244,6 +264,32 @@ export default function InvoicesPage() {
             <TotalsBar items={[["Subtotal", fmt(viewing.subtotal)], ["VAT", fmt(viewing.vatTotal)], ["Grand total", fmt(viewing.grandTotal)], ["Paid", fmt(viewing.paidTotal)], ["Outstanding", fmt(viewing.grandTotal - viewing.paidTotal)]]} />
           </>
         )}
+      </Modal>
+
+      {/* Update status modal */}
+      <Modal
+        open={!!statusModal}
+        title={statusModal ? `Update Status — ${statusModal.no}` : ""}
+        onClose={() => setStatusModal(null)}
+        footer={
+          <>
+            <Button
+              onClick={() => { if (statusModal) statusMutation.mutate({ id: statusModal.id, status: newStatus }); }}
+              disabled={statusMutation.isPending || newStatus === statusModal?.status}
+            >
+              {statusMutation.isPending ? "Saving…" : "Save"}
+            </Button>
+            <Button variant="ghost" onClick={() => setStatusModal(null)}>Cancel</Button>
+          </>
+        }
+      >
+        <Field label="Status">
+          <Select value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
+            {["Draft", "Paid", "Partial", "Overdue"].map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </Select>
+        </Field>
       </Modal>
 
       {/* Delete confirmation modal */}

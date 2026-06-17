@@ -1,7 +1,23 @@
 import { apiError } from "@/lib/apiError";
 import { db } from "@/lib/db";
 import { requireRight } from "@/lib/auth";
+import { z } from "zod";
 import { NextResponse } from "next/server";
+
+const ORDER_STATUSES = ["Open", "Invoiced", "Cancelled"] as const;
+const StatusSchema = z.object({ status: z.enum(ORDER_STATUSES) });
+
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    await requireRight("Sale Orders", "edit");
+    const { id } = await params;
+    const { status } = StatusSchema.parse(await req.json());
+    await db.saleOrder.update({ where: { id }, data: { status } });
+    return NextResponse.json({ ok: true });
+  } catch (e: unknown) {
+    return apiError(e);
+  }
+}
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
