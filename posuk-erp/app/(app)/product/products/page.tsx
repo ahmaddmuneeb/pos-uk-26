@@ -12,7 +12,7 @@ import { Input } from "@/components/forms/Input";
 import { Select } from "@/components/forms/Select";
 import { ExportActions, KeyValue } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
-import { Eye, Pencil, Trash2, PackagePlus } from "lucide-react";
+import { Eye, Pencil, Trash2, PackagePlus, ToggleLeft, ToggleRight } from "lucide-react";
 import { toast } from "sonner";
 
 type CategoryOption = { id: string; code: string; name: string };
@@ -90,8 +90,8 @@ export default function ProductsPage() {
   const [adjustError, setAdjustError] = useState<string | null>(null);
 
   const { data: products = [], isLoading } = useQuery<ProductRow[]>({
-    queryKey: ["products"],
-    queryFn: () => fetchArray("/api/products"),
+    queryKey: ["products-all"],
+    queryFn: () => fetchArray("/api/products?all=true"),
   });
 
   const { data: categories = [] } = useQuery<CategoryOption[]>({
@@ -132,7 +132,7 @@ export default function ProductsPage() {
         return r.json();
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["products-all"] });
       setForm(EMPTY_FORM);
       setShow(false);
       toast.success("Product created.");
@@ -153,7 +153,7 @@ export default function ProductsPage() {
         return r.json();
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["products-all"] });
       setForm(EMPTY_FORM);
       setEditingId(null);
       setShow(false);
@@ -175,7 +175,7 @@ export default function ProductsPage() {
         return r.json();
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["products-all"] });
       setAdjusting(null);
       setAdjustForm({ locationId: "", qty: "", reason: "" });
       setAdjustError(null);
@@ -183,12 +183,28 @@ export default function ProductsPage() {
     },
   });
 
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) =>
+      fetch(`/api/products/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active }),
+      }).then(async (r) => {
+        if (!r.ok) throw new Error((await r.json()).error || "Failed to update");
+      }),
+    onSuccess: (_data, { active }) => {
+      qc.invalidateQueries({ queryKey: ["products-all"] });
+      toast.success(active ? "Product activated." : "Product deactivated.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) =>
       fetch(`/api/products/${id}`, { method: "DELETE" }).then(async (r) => {
         if (!r.ok) throw new Error((await r.json()).error || "Failed to delete");
       }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); setConfirmDelete(null); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products-all"] }); setConfirmDelete(null); },
   });
 
   const handleDelete = async () => {
@@ -327,13 +343,22 @@ export default function ProductsPage() {
     {
       key: "act",
       header: "Actions",
-      width: 120,
+      width: 148,
       align: "right",
       render: (r) => (
         <span className="no-print" style={{ display: "inline-flex", gap: 4, justifyContent: "flex-end" }}>
           <IconButton label="View" size="sm" onClick={() => setViewing(r)}><Eye size={14} color="#38bdf8" /></IconButton>
           <IconButton label="Edit" size="sm" onClick={() => openEdit(r)}><Pencil size={14} color="#4ade80" /></IconButton>
           <IconButton label="Adjust stock" size="sm" onClick={() => openAdjust(r)}><PackagePlus size={14} color="#a78bfa" /></IconButton>
+          <IconButton
+            label={r.active ? "Deactivate" : "Activate"}
+            size="sm"
+            onClick={() => toggleMutation.mutate({ id: r.id, active: !r.active })}
+          >
+            {r.active
+              ? <ToggleRight size={14} color="#facc15" />
+              : <ToggleLeft size={14} color="#facc15" />}
+          </IconButton>
           <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete(r)}><Trash2 size={14} color="#f87171" /></IconButton>
         </span>
       ),

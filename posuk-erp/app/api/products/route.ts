@@ -19,11 +19,14 @@ const Schema = z.object({
   active: z.boolean().default(true),
 });
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     await requireRight("Products", "view");
+    const { searchParams } = new URL(req.url);
+    const all = searchParams.get("all") === "true";
 
     const products = await db.product.findMany({
+      where: all ? undefined : { active: true },
       orderBy: { sku: "asc" },
       include: {
         category: { select: { id: true, name: true } },

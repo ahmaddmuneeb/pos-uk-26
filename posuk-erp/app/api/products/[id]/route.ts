@@ -4,6 +4,8 @@ import { requireRight } from "@/lib/auth";
 import { z } from "zod";
 import { NextResponse } from "next/server";
 
+const ToggleSchema = z.object({ active: z.boolean() });
+
 const Schema = z.object({
   sku: z.string().min(1),
   name: z.string().min(1),
@@ -38,8 +40,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     await requireRight("Products", "edit");
     const { id } = await params;
     const body = await req.json();
-    const data = Schema.parse(body);
 
+    if (Object.keys(body).length === 1 && "active" in body) {
+      const { active } = ToggleSchema.parse(body);
+      const product = await db.product.update({ where: { id }, data: { active } });
+      return NextResponse.json(product);
+    }
+
+    const data = Schema.parse(body);
     const product = await db.product.update({
       where: { id },
       data: {

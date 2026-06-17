@@ -8,6 +8,7 @@ export async function GET() {
     await requireRight("Stock Ledger", "view");
 
     const products = await db.product.findMany({
+      where: { active: true },
       orderBy: { sku: "asc" },
       include: {
         category: { select: { id: true, name: true } },
