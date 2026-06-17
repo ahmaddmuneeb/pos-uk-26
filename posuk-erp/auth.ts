@@ -45,7 +45,7 @@ const authConfig: NextAuthConfig = {
     CredentialsProvider({
       name: "credentials",
       credentials: { username: { type: "text" }, password: { type: "password" } },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!credentials?.username || !credentials.password) return null;
         const user = await db.user.findUnique({
           where: { username: credentials.username as string },
@@ -55,7 +55,10 @@ const authConfig: NextAuthConfig = {
         const ok = await bcrypt.compare(credentials.password as string, user.passwordHash);
         if (!ok) return null;
         await db.user.update({ where: { id: user.id }, data: { lastLogin: new Date() } });
-        void sendLoginAlert(user).catch(() => {});
+        const ip = (request as Request).headers?.get("x-forwarded-for")?.split(",")[0].trim()
+          ?? (request as Request).headers?.get("x-real-ip")
+          ?? "unknown";
+        void sendLoginAlert(user, ip).catch(() => {});
         return {
           id: user.id,
           username: user.username,

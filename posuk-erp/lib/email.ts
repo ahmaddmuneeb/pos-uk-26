@@ -44,8 +44,34 @@ function now() {
   return new Date().toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }) + " UTC";
 }
 
-export async function sendLoginAlert(user: { email: string | null; fullName: string; username: string; branch: { name: string } }) {
+const LOCAL_IPS = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1", "localhost", "unknown"]);
+
+async function getLocation(ip: string): Promise<{ ip: string; location: string }> {
+  const clean = ip.replace("::ffff:", "");
+  if (!clean || LOCAL_IPS.has(clean.toLowerCase())) {
+    return { ip: clean || "Unknown", location: "Local / Development" };
+  }
+  try {
+    const res = await fetch(`https://ipapi.co/${clean}/json/`, {
+      signal: AbortSignal.timeout(4000),
+      headers: { "User-Agent": "posuk-erp/1.0" },
+    });
+    if (!res.ok) return { ip: clean, location: "Unknown" };
+    const d = await res.json() as { city?: string; region?: string; country_name?: string; error?: boolean };
+    if (d.error) return { ip: clean, location: "Unknown" };
+    const parts = [d.city, d.region, d.country_name].filter(Boolean);
+    return { ip: clean, location: parts.length ? parts.join(", ") : "Unknown" };
+  } catch {
+    return { ip: clean, location: "Unknown" };
+  }
+}
+
+export async function sendLoginAlert(
+  user: { email: string | null; fullName: string; username: string; branch: { name: string } },
+  rawIp?: string,
+) {
   if (!user.email) return;
+  const { ip, location } = rawIp ? await getLocation(rawIp) : { ip: "Unknown", location: "Unknown" };
   const { error } = await resend.emails.send({
     from: FROM,
     to: user.email,
@@ -56,6 +82,8 @@ export async function sendLoginAlert(user: { email: string | null; fullName: str
       info([
         { label: "Username", value: `@${user.username}` },
         { label: "Branch", value: user.branch.name },
+        { label: "IP address", value: ip },
+        { label: "Location", value: location },
         { label: "Time", value: now() },
       ]) +
       warn("If this wasn't you, contact your administrator and change your password immediately.")
