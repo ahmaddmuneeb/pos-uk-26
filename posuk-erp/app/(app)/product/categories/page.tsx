@@ -21,14 +21,22 @@ export default function CategoriesPage() {
 
   const add = useMutation({
     mutationFn: (body: unknown) =>
-      fetch("/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      }).then((r) => {
-        if (!r.ok) return r.json().then((e) => Promise.reject(new Error(e.error || "Failed")));
-        return r.json();
-      }),
+      fetch("/api/categories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+        .then((r) => { if (!r.ok) return r.json().then((e) => Promise.reject(new Error(e.error || "Failed"))); return r.json(); }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
+  });
+
+  const edit = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
+      fetch(`/api/categories/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
+        .then(async (r) => { if (!r.ok) throw new Error((await r.json()).error || "Failed"); return r.json(); }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) =>
+      fetch(`/api/categories/${id}`, { method: "DELETE" })
+        .then(async (r) => { if (!r.ok) throw new Error((await r.json()).error || "Failed"); }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
 
@@ -37,26 +45,19 @@ export default function CategoriesPage() {
       title="Categories"
       addLabel="Add category"
       loading={isLoading}
-      rows={rows}
+      rows={rows as unknown as Record<string, unknown>[]}
       columns={[
         { key: "code", header: "Code", width: 120 },
         { key: "name", header: "Category name" },
-        {
-          key: "active",
-          header: "Status",
-          width: 100,
-          render: (r) => (
-            <Badge tone={r.active ? "success" : "neutral"}>
-              {r.active ? "Active" : "Inactive"}
-            </Badge>
-          ),
-        },
+        { key: "active", header: "Status", width: 100, render: (r) => <Badge tone={(r as unknown as CategoryRow).active ? "success" : "neutral"}>{(r as unknown as CategoryRow).active ? "Active" : "Inactive"}</Badge> },
       ]}
       formFields={[
         { key: "code", label: "Code", required: true, placeholder: "CAT-01" },
         { key: "name", label: "Category name", required: true },
       ]}
       onAdd={(form) => add.mutateAsync(form)}
+      onEdit={(id, form) => edit.mutateAsync({ id, data: form })}
+      onDelete={(id) => remove.mutateAsync(id)}
     />
   );
 }
