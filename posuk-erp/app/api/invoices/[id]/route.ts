@@ -3,6 +3,25 @@ import { db } from "@/lib/db";
 import { requireRight } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    await requireRight("Sale Invoices", "delete");
+    const { id } = await params;
+    const inv = await db.invoice.findUniqueOrThrow({ where: { id }, select: { no: true } });
+    await db.$transaction([
+      db.ledgerEntry.deleteMany({ where: { invoiceId: id } }),
+      db.stockLedger.deleteMany({ where: { docNo: inv.no } }),
+      db.invoice.delete({ where: { id } }),
+    ]);
+    return NextResponse.json({ ok: true });
+  } catch (e: unknown) {
+    if ((e as { code?: string }).code === "P2003") {
+      return NextResponse.json({ error: "Cannot delete: this invoice has sale returns linked to it." }, { status: 409 });
+    }
+    return apiError(e);
+  }
+}
+
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await requireRight("Sale Invoices", "view");

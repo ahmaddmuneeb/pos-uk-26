@@ -212,6 +212,96 @@ export function ledgerDoc(company: CompanyInfo, customer: { code: string; name: 
   `;
 }
 
+export interface OrderPrintData {
+  no: string;
+  date: string | Date;
+  status: string;
+  customerName: string;
+  customerAddress?: string | null;
+  salePersonName?: string | null;
+  subtotal: number;
+  vatTotal: number;
+  grandTotal: number;
+  lines: { sku: string; name: string; qty: number; rate: number; discount: number; vatRate: number; lineTotal: number }[];
+}
+
+export function orderDoc(company: CompanyInfo, ord: OrderPrintData): string {
+  const rows = ord.lines.map((l, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${esc(l.sku)}<br/><span style="color:#666">${esc(l.name)}</span></td>
+      <td class="text-right">${l.qty}</td>
+      <td class="text-right">${fmt(l.rate)}</td>
+      <td class="text-right">${l.discount}%</td>
+      <td class="text-right">${l.vatRate}%</td>
+      <td class="text-right">${fmt(l.lineTotal)}</td>
+    </tr>`).join("");
+
+  return `
+    ${docHeader(company, "Sale Order", [["Order No", ord.no], ["Date", ukDate(ord.date)], ["Status", ord.status]])}
+    <div class="section">
+      <div class="section-label">Customer</div>
+      <div>${esc(ord.customerName)}</div>
+      ${ord.customerAddress ? `<div style="font-size:12px;color:#555">${esc(ord.customerAddress)}</div>` : ""}
+      ${ord.salePersonName ? `<div style="font-size:12px;color:#555">Sale person: ${esc(ord.salePersonName)}</div>` : ""}
+    </div>
+    <table>
+      <thead><tr><th>#</th><th>Item</th><th class="text-right">Qty</th><th class="text-right">Rate</th><th class="text-right">Disc</th><th class="text-right">VAT</th><th class="text-right">Total</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <table class="totals">
+      <tr><td>Subtotal</td><td class="text-right">${fmt(ord.subtotal)}</td></tr>
+      <tr><td>VAT</td><td class="text-right">${fmt(ord.vatTotal)}</td></tr>
+      <tr class="grand"><td>Grand total</td><td class="text-right">${fmt(ord.grandTotal)}</td></tr>
+    </table>
+    ${docFooter(company)}
+  `;
+}
+
+export interface ReturnPrintData {
+  no: string;
+  date: string | Date;
+  invoiceNo: string;
+  customerName: string;
+  reason?: string | null;
+  subtotal: number;
+  vatTotal: number;
+  grandTotal: number;
+  lines: { sku: string; name: string; qty: number; rate: number; vatRate: number; lineTotal: number }[];
+}
+
+export function returnDoc(company: CompanyInfo, ret: ReturnPrintData): string {
+  const rows = ret.lines.map((l, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${esc(l.sku)}<br/><span style="color:#666">${esc(l.name)}</span></td>
+      <td class="text-right">${l.qty}</td>
+      <td class="text-right">${fmt(l.rate)}</td>
+      <td class="text-right">${l.vatRate}%</td>
+      <td class="text-right">${fmt(l.lineTotal)}</td>
+    </tr>`).join("");
+
+  return `
+    ${docHeader(company, "Sale Return", [["Return No", ret.no], ["Date", ukDate(ret.date)], ["Against Invoice", ret.invoiceNo]])}
+    <div class="section">
+      <div class="section-label">Customer</div>
+      <div>${esc(ret.customerName)}</div>
+      ${ret.reason ? `<div style="font-size:12px;color:#555">Reason: ${esc(ret.reason)}</div>` : ""}
+    </div>
+    <table>
+      <thead><tr><th>#</th><th>Item</th><th class="text-right">Qty</th><th class="text-right">Rate</th><th class="text-right">VAT</th><th class="text-right">Total</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <table class="totals">
+      <tr><td>Subtotal</td><td class="text-right">${fmt(ret.subtotal)}</td></tr>
+      <tr><td>VAT</td><td class="text-right">${fmt(ret.vatTotal)}</td></tr>
+      <tr class="grand"><td>Refund total</td><td class="text-right">${fmt(ret.grandTotal)}</td></tr>
+    </table>
+    ${docFooter(company, "This document confirms goods returned as listed above.")}
+    ${signatureBlock("Received by", "Authorised signature")}
+  `;
+}
+
 export interface ReceivablePrintData {
   code: string;
   name: string;

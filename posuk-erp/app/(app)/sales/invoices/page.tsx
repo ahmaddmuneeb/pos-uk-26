@@ -10,12 +10,13 @@ import { Modal } from "@/components/feedback/Modal";
 import { Field } from "@/components/forms/Field";
 import { Select } from "@/components/forms/Select";
 import { Input } from "@/components/forms/Input";
-import { Toolbar, TotalsBar, ExportActions } from "@/components/ui/ScreenHelpers";
+import { Toolbar, TotalsBar, ExportActions, KeyValue } from "@/components/ui/ScreenHelpers";
 import { LineItems, docTotals, DocLine } from "@/components/ui/LineItems";
 import { fmt } from "@/lib/currency";
 import { getCompanyInfo, invoiceDoc, openPrintWindow, InvoicePrintData } from "@/lib/printDoc";
 import { fetchArray } from "@/lib/fetchJson";
 import { toast } from "sonner";
+import { Eye, Printer, Trash2 } from "lucide-react";
 
 interface Customer { id: string; name: string }
 interface SalePerson { id: string; name: string }
@@ -38,19 +39,22 @@ export default function InvoicesPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [q, setQ] = useState("");
   const [show, setShow] = useState(false);
-  const [printingId, setPrintingId] = useState<string | null>(null);
   const [head, setHead] = useState({ customerId: "", salePersonId: "", locationId: "", orderId: "", date: new Date().toISOString().slice(0, 10), dueDate: new Date().toISOString().slice(0, 10) });
   const [lines, setLines] = useState<DocLine[]>([blankLine]);
   const [error, setError] = useState("");
+
+  const [viewing, setViewing] = useState<InvoicePrintData | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; no: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   const t = docTotals(lines, true);
-
   const normProducts = products.map((p) => ({ id: p.id, sku: p.sku, name: p.name, wholesaleRate: typeof p.wholesaleRate === "string" ? parseFloat(p.wholesaleRate) : p.wholesaleRate }));
-
   const filtered = (rows as { status: string; no: string; customerName: string }[]).filter((r) =>
     (!statusFilter || r.status === statusFilter) && (!q || r.no.toLowerCase().includes(q.toLowerCase()) || r.customerName.toLowerCase().includes(q.toLowerCase()))
   );
 
-  const reset = () => { setHead({ customerId: "", salePersonId: "", locationId: "", orderId: "", date: new Date().toISOString().slice(0, 10), dueDate: new Date().toISOString().slice(0, 10) }); setLines([blankLine]); toast.error(""); };
+  const reset = () => { setHead({ customerId: "", salePersonId: "", locationId: "", orderId: "", date: new Date().toISOString().slice(0, 10), dueDate: new Date().toISOString().slice(0, 10) }); setLines([blankLine]); setError(""); };
 
   const save = useMutation({
     mutationFn: () => fetch("/api/invoices", {
@@ -65,21 +69,53 @@ export default function InvoicesPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const valid = head.customerId && head.locationId && lines.some((l) => l.productId);
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) =>
+      fetch(`/api/invoices/${id}`, { method: "DELETE" }).then(async (r) => {
+        if (!r.ok) throw new Error((await r.json()).error || "Failed to delete");
+      }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices"] }); setConfirmDelete(null); },
+  });
 
-  const printInvoice = async (id: string) => {
-    setPrintingId(id);
+  const loadInvoice = async (id: string): Promise<InvoicePrintData | null> => {
+    setLoadingId(id);
     try {
       const res = await fetch(`/api/invoices/${id}`);
       if (!res.ok) throw new Error((await res.json()).error || "Failed to load invoice");
-      const inv: InvoicePrintData = await res.json();
-      openPrintWindow(`Invoice ${inv.no}`, invoiceDoc(getCompanyInfo(preferences), inv));
+      return await res.json();
     } catch (e: unknown) {
       toast.error((e as Error).message);
+      return null;
     } finally {
-      setPrintingId(null);
+      setLoadingId(null);
     }
   };
+
+  const openView = async (id: string) => {
+    const inv = await loadInvoice(id);
+    if (inv) setViewing(inv);
+  };
+
+  const printInvoice = async (id: string, inv?: InvoicePrintData) => {
+    const data = inv ?? await loadInvoice(id);
+    if (data) openPrintWindow(`Invoice ${data.no}`, invoiceDoc(getCompanyInfo(preferences), data));
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    setDeleting(true);
+    try {
+      await deleteMutation.mutateAsync(confirmDelete.id);
+      toast.success(`Invoice ${confirmDelete.no} deleted.`);
+    } catch (e: unknown) {
+      toast.error((e as Error).message);
+      setConfirmDelete(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const valid = head.customerId && head.locationId && lines.some((l) => l.productId);
 
   const columns: Column<any>[] = [
     { key: "no", header: "Invoice No" },
@@ -90,26 +126,35 @@ export default function InvoicesPage() {
     { key: "paidTotal", header: "Paid", align: "right", render: (r) => fmt(r.paidTotal as number) },
     { key: "outstanding", header: "Outstanding", align: "right", render: (r) => fmt(r.outstanding as number) },
     { key: "status", header: "Status", render: (r) => <Badge tone={statusTone[r.status as string] || "neutral"}>{r.status as string}</Badge> },
-    { key: "act", header: "", align: "right", render: (r) => <span className="no-print" style={{ display: "inline-flex", gap: 4, justifyContent: "flex-end" }}><IconButton label="Print" size="sm" disabled={printingId === r.id} onClick={() => printInvoice(r.id as string)}>⎙</IconButton></span> },
+    {
+      key: "act", header: "Actions", align: "right", width: 100,
+      render: (r) => (
+        <span className="no-print" style={{ display: "inline-flex", gap: 4, justifyContent: "flex-end" }}>
+          <IconButton label="View" size="sm" disabled={loadingId === r.id} onClick={() => openView(r.id as string)}><Eye size={14} color="#38bdf8" /></IconButton>
+          <IconButton label="Print" size="sm" disabled={loadingId === r.id} onClick={() => printInvoice(r.id as string)}><Printer size={14} color="#a78bfa" /></IconButton>
+          <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete({ id: r.id as string, no: r.no as string })}><Trash2 size={14} color="#f87171" /></IconButton>
+        </span>
+      ),
+    },
   ];
 
   return (
-    <Card title="Sale Invoices" actions={<><ExportActions columns={columns} rows={filtered} filename="sale-invoices" /><Button onClick={() => setShow(true)}>New invoice</Button><Button variant="ghost" onClick={() => qc.invalidateQueries({ queryKey: ["invoices"] })}>Refresh</Button></>}>
-      <Toolbar>
-        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ width: "auto" }}>
-          <option value="">All statuses</option><option>Paid</option><option>Partial</option><option>Overdue</option><option>Draft</option>
-        </Select>
-        <Input placeholder="Search invoice or customer" value={q} onChange={(e) => setQ(e.target.value)} style={{ width: "auto", minWidth: "15rem" }} />
-      </Toolbar>
-      {isLoading ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div> : (
-        <div style={{ overflowX: "auto" }}>
-          <DataTable
-            rowKey={(r: any) => r.id as string}
-            columns={columns}
-            rows={filtered}
-          />
-        </div>
-      )}
+    <>
+      <Card title="Sale Invoices" actions={<><ExportActions columns={columns} rows={filtered} filename="sale-invoices" /><Button onClick={() => setShow(true)}>New invoice</Button><Button variant="ghost" onClick={() => qc.invalidateQueries({ queryKey: ["invoices"] })}>Refresh</Button></>}>
+        <Toolbar>
+          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ width: "auto" }}>
+            <option value="">All statuses</option><option>Paid</option><option>Partial</option><option>Overdue</option><option>Draft</option>
+          </Select>
+          <Input placeholder="Search invoice or customer" value={q} onChange={(e) => setQ(e.target.value)} style={{ width: "auto", minWidth: "15rem" }} />
+        </Toolbar>
+        {isLoading ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div> : (
+          <div style={{ overflowX: "auto" }}>
+            <DataTable rowKey={(r: any) => r.id as string} columns={columns} rows={filtered} />
+          </div>
+        )}
+      </Card>
+
+      {/* New invoice modal */}
       <Modal open={show} wide title="New sale invoice" onClose={() => { setShow(false); reset(); }}
         footer={<><Button onClick={() => save.mutate()} disabled={!valid || save.isPending}>{save.isPending ? "Posting…" : "Post invoice"}</Button><Button variant="ghost" onClick={() => { setShow(false); reset(); }}>Cancel</Button></>}>
         {error && <p style={{ color: "var(--danger)", fontSize: "var(--fs-sm)", margin: "0 0 12px" }}>{error}</p>}
@@ -146,6 +191,79 @@ export default function InvoicesPage() {
         <LineItems lines={lines} setLines={setLines} products={normProducts} />
         <TotalsBar items={[["Subtotal", fmt(t.sub)], ["VAT (20%)", fmt(t.vat)], ["Grand total", fmt(t.grand)]]} />
       </Modal>
-    </Card>
+
+      {/* View modal */}
+      <Modal
+        open={!!viewing}
+        title={viewing ? `Invoice ${viewing.no}` : ""}
+        wide
+        onClose={() => setViewing(null)}
+        footer={
+          <>
+            <Button onClick={() => { if (viewing) printInvoice("", viewing); }}>
+              <Printer size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />Print
+            </Button>
+            <Button variant="ghost" onClick={() => setViewing(null)}>Close</Button>
+          </>
+        }
+      >
+        {viewing && (
+          <>
+            <KeyValue cols={3} items={[
+              ["Invoice No", viewing.no],
+              ["Date", new Date(viewing.date).toLocaleDateString("en-GB")],
+              ["Due Date", new Date(viewing.dueDate).toLocaleDateString("en-GB")],
+              ["Customer", viewing.customerName],
+              ["Sale Person", viewing.salePersonName ?? "—"],
+              ["Status", viewing.status],
+            ]} />
+            <div style={{ marginTop: 16, overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--fs-sm)" }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid var(--border)" }}>
+                    {["SKU", "Product", "Qty", "Rate", "Disc%", "VAT%", "Total"].map((h) => (
+                      <th key={h} style={{ padding: "6px 8px", textAlign: h === "SKU" || h === "Product" ? "left" : "right", color: "var(--text-subtle)", fontWeight: 600, fontSize: "var(--fs-xs)", textTransform: "uppercase" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {viewing.lines.map((l, i) => (
+                    <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                      <td style={{ padding: "6px 8px" }}>{l.sku}</td>
+                      <td style={{ padding: "6px 8px" }}>{l.name}</td>
+                      <td style={{ padding: "6px 8px", textAlign: "right" }}>{l.qty}</td>
+                      <td style={{ padding: "6px 8px", textAlign: "right" }}>{fmt(l.rate)}</td>
+                      <td style={{ padding: "6px 8px", textAlign: "right" }}>{l.discount}%</td>
+                      <td style={{ padding: "6px 8px", textAlign: "right" }}>{l.vatRate}%</td>
+                      <td style={{ padding: "6px 8px", textAlign: "right" }}>{fmt(l.lineTotal)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <TotalsBar items={[["Subtotal", fmt(viewing.subtotal)], ["VAT", fmt(viewing.vatTotal)], ["Grand total", fmt(viewing.grandTotal)], ["Paid", fmt(viewing.paidTotal)], ["Outstanding", fmt(viewing.grandTotal - viewing.paidTotal)]]} />
+          </>
+        )}
+      </Modal>
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={!!confirmDelete}
+        title="Delete Invoice"
+        onClose={() => setConfirmDelete(null)}
+        footer={
+          <>
+            <Button onClick={handleDelete} disabled={deleting} style={{ background: "var(--danger)", borderColor: "var(--danger)" }}>
+              {deleting ? "Deleting…" : "Yes, delete"}
+            </Button>
+            <Button variant="ghost" onClick={() => setConfirmDelete(null)}>Cancel</Button>
+          </>
+        }
+      >
+        <p style={{ margin: 0, color: "var(--text)" }}>
+          Are you sure you want to delete invoice <strong>{confirmDelete?.no}</strong>? This will reverse all stock and ledger entries. This cannot be undone.
+        </p>
+      </Modal>
+    </>
   );
 }
