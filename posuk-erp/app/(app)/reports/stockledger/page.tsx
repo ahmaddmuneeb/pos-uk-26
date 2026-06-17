@@ -12,6 +12,8 @@ import { Toolbar, KeyValue, ExportActions } from "@/components/ui/ScreenHelpers"
 import { fetchArray } from "@/lib/fetchJson";
 import { openPrintWindow, simpleTableDoc } from "@/lib/printDoc";
 import { Eye, Printer } from "lucide-react";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 interface Product {
   id: string;
@@ -31,6 +33,7 @@ interface StockLedgerRow {
 }
 
 export default function StockLedgerReportPage() {
+  const rights = useRights("Stock Ledger");
   const [productId, setProductId] = useState("");
   const [viewing, setViewing] = useState<StockLedgerRow | null>(null);
 
@@ -79,15 +82,16 @@ export default function StockLedgerReportPage() {
       render: (r) => (
         <span className="no-print" style={{ display: "inline-flex", gap: 4 }}>
           <IconButton label="View" size="sm" onClick={() => setViewing(r)}><Eye size={14} color="#38bdf8" /></IconButton>
-          <IconButton label="Print" size="sm" onClick={() => printRow(r)}><Printer size={14} color="#a78bfa" /></IconButton>
+          {rights.print && <IconButton label="Print" size="sm" onClick={() => printRow(r)}><Printer size={14} color="#a78bfa" /></IconButton>}
         </span>
       ),
     },
   ];
 
   return (
+    <ScreenGuard screen="Stock Ledger">
     <>
-      <Card title="Stock Ledger" subtitle="Stock movement history by product" actions={<ExportActions columns={columns} rows={rows} filename="stock-ledger" />}>
+      <Card title="Stock Ledger" subtitle="Stock movement history by product" actions={rights.print ? <ExportActions columns={columns} rows={rows} filename="stock-ledger" /> : undefined}>
         <Toolbar>
           <Field label="Product">
             <Select value={productId} onChange={(e) => setProductId(e.target.value)} style={{ width: 280 }}>
@@ -115,9 +119,9 @@ export default function StockLedgerReportPage() {
         onClose={() => setViewing(null)}
         footer={
           <>
-            <Button onClick={() => { if (viewing) printRow(viewing); }}>
+            {rights.print && <Button onClick={() => { if (viewing) printRow(viewing); }}>
               <Printer size={14} style={{ marginRight: 6 }} />Print
-            </Button>
+            </Button>}
             <Button variant="ghost" onClick={() => setViewing(null)}>Close</Button>
           </>
         }
@@ -135,5 +139,6 @@ export default function StockLedgerReportPage() {
         )}
       </Modal>
     </>
+    </ScreenGuard>
   );
 }

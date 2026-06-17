@@ -11,6 +11,8 @@ import { ExportActions, KeyValue } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
 import { openPrintWindow, simpleTableDoc } from "@/lib/printDoc";
 import { Eye, Printer } from "lucide-react";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 interface Product {
   id: string;
@@ -30,6 +32,7 @@ interface ReorderRow {
 }
 
 export default function ReorderReportPage() {
+  const rights = useRights("Re-Order Level");
   const [viewing, setViewing] = useState<ReorderRow | null>(null);
 
   const { data: products = [], isLoading } = useQuery<Product[]>({
@@ -73,15 +76,16 @@ export default function ReorderReportPage() {
       render: (r) => (
         <span className="no-print" style={{ display: "inline-flex", gap: 4 }}>
           <IconButton label="View" size="sm" onClick={() => setViewing(r)}><Eye size={14} color="#38bdf8" /></IconButton>
-          <IconButton label="Print" size="sm" onClick={() => printRow(r)}><Printer size={14} color="#a78bfa" /></IconButton>
+          {rights.print && <IconButton label="Print" size="sm" onClick={() => printRow(r)}><Printer size={14} color="#a78bfa" /></IconButton>}
         </span>
       ),
     },
   ];
 
   return (
+    <ScreenGuard screen="Re-Order Level">
     <>
-      <Card title="Reorder Report" subtitle="Products below their reorder level" actions={<ExportActions columns={columns} rows={rows} filename="reorder-report" />}>
+      <Card title="Reorder Report" subtitle="Products below their reorder level" actions={rights.print ? <ExportActions columns={columns} rows={rows} filename="reorder-report" /> : undefined}>
         {isLoading ? (
           <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div>
         ) : (
@@ -95,9 +99,9 @@ export default function ReorderReportPage() {
         onClose={() => setViewing(null)}
         footer={
           <>
-            <Button onClick={() => { if (viewing) printRow(viewing); }}>
+            {rights.print && <Button onClick={() => { if (viewing) printRow(viewing); }}>
               <Printer size={14} style={{ marginRight: 6 }} />Print
-            </Button>
+            </Button>}
             <Button variant="ghost" onClick={() => setViewing(null)}>Close</Button>
           </>
         }
@@ -113,5 +117,6 @@ export default function ReorderReportPage() {
         )}
       </Modal>
     </>
+    </ScreenGuard>
   );
 }

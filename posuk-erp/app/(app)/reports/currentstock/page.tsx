@@ -5,6 +5,8 @@ import { Card } from "@/components/data-display/Card";
 import { DataTable, Column } from "@/components/data-display/DataTable";
 import { ExportActions } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   PieChart, Pie, Cell, ResponsiveContainer,
@@ -44,6 +46,7 @@ const tooltipStyle = {
 };
 
 export default function CurrentStockReportPage() {
+  const rights = useRights("Current Stock");
   const { data: rows = [], isLoading } = useQuery<CurrentStockRow[]>({
     queryKey: ["currentstock"],
     queryFn: () => fetchArray("/api/reports/currentstock"),
@@ -82,14 +85,17 @@ export default function CurrentStockReportPage() {
 
   if (isLoading) {
     return (
+      <ScreenGuard screen="Current Stock">
       <Card title="Current Stock" subtitle="Total stock balance across all locations">
         <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div>
       </Card>
+      </ScreenGuard>
     );
   }
 
   return (
-    <Card title="Current Stock" subtitle="Total stock balance across all locations" actions={<ExportActions columns={columns} rows={rows} filename="current-stock" />}>
+    <ScreenGuard screen="Current Stock">
+    <Card title="Current Stock" subtitle="Total stock balance across all locations" actions={rights.print ? <ExportActions columns={columns} rows={rows} filename="current-stock" /> : undefined}>
 
       {/* Stat tiles */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginBottom: "1.5rem" }}>
@@ -159,5 +165,6 @@ export default function CurrentStockReportPage() {
       {/* Table */}
       <DataTable columns={columns} rows={rows} rowKey={(r) => r.id} empty="No stock data" />
     </Card>
+    </ScreenGuard>
   );
 }

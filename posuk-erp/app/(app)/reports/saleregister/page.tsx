@@ -7,6 +7,8 @@ import { Badge } from "@/components/data-display/Badge";
 import { ExportActions } from "@/components/ui/ScreenHelpers";
 import { fmt } from "@/lib/currency";
 import { fetchArray } from "@/lib/fetchJson";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 interface InvoiceRow {
   id: string;
@@ -35,6 +37,7 @@ function statusTone(status: string): "success" | "warning" | "danger" | "info" |
 }
 
 export default function SaleRegisterReportPage() {
+  const rights = useRights("Sale Register");
   const { data: rows = [], isLoading } = useQuery<InvoiceRow[]>({
     queryKey: ["invoices"],
     queryFn: () => fetchArray("/api/invoices"),
@@ -55,12 +58,14 @@ export default function SaleRegisterReportPage() {
   ];
 
   return (
-    <Card title="Sale Register" subtitle="All sales invoices" actions={<ExportActions columns={columns} rows={rows} filename="sale-register" />}>
+    <ScreenGuard screen="Sale Register">
+    <Card title="Sale Register" subtitle="All sales invoices" actions={rights.print ? <ExportActions columns={columns} rows={rows} filename="sale-register" /> : undefined}>
       {isLoading ? (
         <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div>
       ) : (
         <DataTable columns={columns} rows={rows} rowKey={(r) => r.id} empty="No invoices found" />
       )}
     </Card>
+    </ScreenGuard>
   );
 }

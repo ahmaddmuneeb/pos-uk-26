@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/data-display/Badge";
 import { ListScreen } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 type CategoryRow = {
   id: string;
@@ -41,6 +42,7 @@ export default function CategoriesPage() {
   });
 
   return (
+    <ScreenGuard screen="Categories">
     <ListScreen
       title="Categories"
       addLabel="Add category"
@@ -59,5 +61,6 @@ export default function CategoriesPage() {
       onEdit={(id, form) => edit.mutateAsync({ id, data: form })}
       onDelete={(id) => remove.mutateAsync(id)}
     />
+    </ScreenGuard>
   );
 }

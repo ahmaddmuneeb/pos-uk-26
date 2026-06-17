@@ -7,23 +7,26 @@ import { Select } from "@/components/forms/Select";
 import { Field } from "@/components/forms/Field";
 import { fetchArray } from "@/lib/fetchJson";
 import { toast } from "sonner";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 const SCREENS = [
   { module: "Company", screens: ["Customers", "Customer Types", "Customer Receipts", "Sale Persons"] },
   { module: "Product", screens: ["Categories", "Sub Categories", "Products", "Stock Locations", "UOM"] },
   { module: "Sales", screens: ["Sale Orders", "Sale Invoices", "Sale Returns"] },
   { module: "Administration", screens: ["Branches", "Users", "User Rights", "Preferences", "Bulk Import"] },
-  { module: "Reports", screens: ["Ledger", "Receivable", "Stock Ledger", "Sale Register", "Return Register", "User Activity"] },
+  { module: "Reports", screens: ["Ledger", "Receivable", "Stock Summary", "Current Stock", "Stock Ledger", "Product List", "Re-Order Level", "Sale Register", "Return Register", "User Activity", "Active Users", "Users List"] },
 ];
 const ACTIONS = ["view", "create", "edit", "delete", "print"] as const;
 
 type RightRow = { [K in (typeof ACTIONS)[number]]: boolean };
 
 export default function UserRightsPage() {
+  const screenRights = useRights("User Rights");
   const qc = useQueryClient();
   const { data: roles = [] } = useQuery({ queryKey: ["roles"], queryFn: () => fetchArray("/api/roles") });
   const [roleId, setRoleId] = useState("");
-  const { data: rights = [] } = useQuery({
+  const { data: rights = [] } = useQuery<({ screen: string } & RightRow)[]>({
     queryKey: ["rights", roleId], enabled: !!roleId,
     queryFn: () => fetchArray(`/api/rights?roleId=${roleId}`),
   });
@@ -31,7 +34,7 @@ export default function UserRightsPage() {
   const [grid, setGrid] = useState<Record<string, RightRow>>({});
 
   const rightsMap: Record<string, RightRow> = {};
-  (rights as ({ screen: string } & RightRow)[]).forEach((r) => { rightsMap[r.screen] = r; });
+  rights.forEach((r) => { rightsMap[r.screen] = r; });
   const effective: Record<string, RightRow> = {};
   SCREENS.flatMap((m) => m.screens).forEach((s) => {
     effective[s] = grid[s] ?? rightsMap[s] ?? { view: false, create: false, edit: false, delete: false, print: false };
@@ -48,8 +51,9 @@ export default function UserRightsPage() {
   });
 
   return (
+    <ScreenGuard screen="User Rights">
     <Card title="User Rights" subtitle="Per-screen access control. Toggle the actions each role may perform."
-      actions={<><Button variant="ghost">Reset</Button><Button onClick={() => save.mutate()} disabled={!roleId || save.isPending}>Save rights</Button></>}>
+      actions={<><Button variant="ghost">Reset</Button>{screenRights.edit && <Button onClick={() => save.mutate()} disabled={!roleId || save.isPending}>Save rights</Button>}</>}>
       <div style={{ display: "flex", gap: 12, marginBottom: "1.25rem" }}>
         <Field label="Role">
           <Select value={roleId} onChange={(e) => { setRoleId(e.target.value); setGrid({}); }} style={{ minWidth: "16rem" }}>
@@ -94,5 +98,6 @@ export default function UserRightsPage() {
         </div>
       )}
     </Card>
+    </ScreenGuard>
   );
 }

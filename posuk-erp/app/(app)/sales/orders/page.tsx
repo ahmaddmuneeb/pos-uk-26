@@ -12,11 +12,13 @@ import { Select } from "@/components/forms/Select";
 import { Input } from "@/components/forms/Input";
 import { TotalsBar, ExportActions } from "@/components/ui/ScreenHelpers";
 import { LineItems, docTotals, DocLine } from "@/components/ui/LineItems";
-import { fmt } from "@/lib/currency";
+import { fmt, currencySymbol } from "@/lib/currency";
 import { getCompanyInfo, orderDoc, openPrintWindow, OrderPrintData } from "@/lib/printDoc";
 import { fetchArray } from "@/lib/fetchJson";
 import { toast } from "sonner";
 import { Eye, Printer, Trash2, RefreshCw } from "lucide-react";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -66,6 +68,7 @@ function last6Months() {
 
 export default function OrdersPage() {
   const qc = useQueryClient();
+  const rights = useRights("Sale Orders");
   const { data: rows = [], isLoading } = useQuery({ queryKey: ["orders"], queryFn: () => fetchArray<OrderRow>("/api/orders") });
   const { data: customers = [] } = useQuery<Customer[]>({ queryKey: ["customers"], queryFn: () => fetchArray("/api/customers") });
   const { data: salePersons = [] } = useQuery<SalePerson[]>({ queryKey: ["salepersons"], queryFn: () => fetchArray("/api/salepersons") });
@@ -163,15 +166,16 @@ export default function OrdersPage() {
       render: (r) => (
         <span className="no-print" style={{ display: "inline-flex", gap: 4, justifyContent: "flex-end" }}>
           <IconButton label="View" size="sm" disabled={loadingId === r.id} onClick={() => openView(r.id)}><Eye size={14} color="#38bdf8" /></IconButton>
-          <IconButton label="Print" size="sm" disabled={loadingId === r.id} onClick={() => printOrder(r.id)}><Printer size={14} color="#a78bfa" /></IconButton>
-          <IconButton label="Update status" size="sm" onClick={() => { setStatusModal({ id: r.id, no: r.no, status: r.status }); setNewStatus(r.status); }}><RefreshCw size={14} color="#4ade80" /></IconButton>
-          <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete({ id: r.id, no: r.no })}><Trash2 size={14} color="#f87171" /></IconButton>
+          {rights.print && <IconButton label="Print" size="sm" disabled={loadingId === r.id} onClick={() => printOrder(r.id)}><Printer size={14} color="#a78bfa" /></IconButton>}
+          {rights.edit && <IconButton label="Update status" size="sm" onClick={() => { setStatusModal({ id: r.id, no: r.no, status: r.status }); setNewStatus(r.status); }}><RefreshCw size={14} color="#4ade80" /></IconButton>}
+          {rights.delete && <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete({ id: r.id, no: r.no })}><Trash2 size={14} color="#f87171" /></IconButton>}
         </span>
       ),
     },
   ];
 
   return (
+    <ScreenGuard screen="Sale Orders">
     <>
       {/* Stat summary */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginBottom: "1.25rem" }}>
@@ -196,7 +200,7 @@ export default function OrdersPage() {
               <CartesianGrid {...gridProps} />
               <XAxis dataKey="month" tick={axisStyle} />
               <YAxis yAxisId="left" tick={axisStyle} allowDecimals={false} />
-              <YAxis yAxisId="right" orientation="right" tick={axisStyle} tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`} width={48} />
+              <YAxis yAxisId="right" orientation="right" tick={axisStyle} tickFormatter={(v) => `${currencySymbol()}${(v / 1000).toFixed(0)}k`} width={48} />
               <Tooltip cursor={false} content={<CurrencyTip />} />
               <Legend wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
               <Bar yAxisId="left" dataKey="Orders" fill="#38bdf8" radius={[4, 4, 0, 0]} />
@@ -231,7 +235,7 @@ export default function OrdersPage() {
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={topCustomers} layout="vertical" margin={{ top: 4, right: 16, left: 4, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1e293b" />
-                  <XAxis type="number" tick={axisStyle} tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`} width={48} />
+                  <XAxis type="number" tick={axisStyle} tickFormatter={(v) => `${currencySymbol()}${(v / 1000).toFixed(0)}k`} width={48} />
                   <YAxis type="category" dataKey="name" tick={axisStyle} width={120} />
                   <Tooltip cursor={false} content={<CurrencyTip />} />
                   <Bar dataKey="Value" fill="#4ade80" radius={[0, 4, 4, 0]} />
@@ -242,7 +246,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Main table */}
-      <Card title="Sale Orders" actions={<><ExportActions columns={columns} rows={rows} filename="sale-orders" /><Button onClick={() => setShow(true)}>New order</Button></>}>
+      <Card title="Sale Orders" actions={<>{rights.print && <ExportActions columns={columns} rows={rows} filename="sale-orders" />}{rights.create && <Button onClick={() => setShow(true)}>New order</Button>}</>}>
         {isLoading ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div> : (
           <DataTable rowKey={(r) => r.id} columns={columns} rows={rows} />
         )}
@@ -273,7 +277,7 @@ export default function OrdersPage() {
 
       {/* View modal */}
       <Modal open={!!viewing} title={viewing ? `Order ${viewing.no}` : ""} wide onClose={() => setViewing(null)}
-        footer={<><Button onClick={() => { if (viewing) printOrder("", viewing); }}><Printer size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />Print</Button><Button variant="ghost" onClick={() => setViewing(null)}>Close</Button></>}>
+        footer={<>{rights.print && <Button onClick={() => { if (viewing) printOrder("", viewing); }}><Printer size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />Print</Button>}<Button variant="ghost" onClick={() => setViewing(null)}>Close</Button></>}>
         {viewing && (
           <>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px 24px", marginBottom: 16 }}>
@@ -308,5 +312,6 @@ export default function OrdersPage() {
         <p style={{ margin: 0, color: "var(--text)" }}>Are you sure you want to delete order <strong>{confirmDelete?.no}</strong>? This cannot be undone.</p>
       </Modal>
     </>
+    </ScreenGuard>
   );
 }

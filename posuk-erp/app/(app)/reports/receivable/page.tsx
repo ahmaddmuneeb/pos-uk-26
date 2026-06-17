@@ -8,6 +8,8 @@ import { ExportActions } from "@/components/ui/ScreenHelpers";
 import { fmt } from "@/lib/currency";
 import { getCompanyInfo, receivableDoc, openPrintWindow } from "@/lib/printDoc";
 import { fetchArray } from "@/lib/fetchJson";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 interface ReceivableRow {
   customerId: string;
@@ -19,6 +21,7 @@ interface ReceivableRow {
 }
 
 export default function ReceivableReportPage() {
+  const rights = useRights("Receivable");
   const { data: rows = [], isLoading } = useQuery<ReceivableRow[]>({
     queryKey: ["receivable"],
     queryFn: () => fetchArray("/api/reports/receivable"),
@@ -50,12 +53,14 @@ export default function ReceivableReportPage() {
   ];
 
   return (
-    <Card title="Receivable Report" subtitle="Customers with outstanding balances" actions={<ExportActions columns={columns} rows={rows} filename="receivable-report" />}>
+    <ScreenGuard screen="Receivable">
+    <Card title="Receivable Report" subtitle="Customers with outstanding balances" actions={rights.print ? <ExportActions columns={columns} rows={rows} filename="receivable-report" /> : undefined}>
       {isLoading ? (
         <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div>
       ) : (
         <DataTable columns={columns} rows={rows} rowKey={(r) => r.customerId} empty="No outstanding balances" />
       )}
     </Card>
+    </ScreenGuard>
   );
 }

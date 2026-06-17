@@ -6,6 +6,8 @@ import { DataTable, Column } from "@/components/data-display/DataTable";
 import { ExportActions } from "@/components/ui/ScreenHelpers";
 import { fmt } from "@/lib/currency";
 import { fetchArray } from "@/lib/fetchJson";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 interface ReturnRow {
   id: string;
@@ -19,6 +21,7 @@ interface ReturnRow {
 }
 
 export default function ReturnRegisterReportPage() {
+  const rights = useRights("Return Register");
   const { data: rows = [], isLoading } = useQuery<ReturnRow[]>({
     queryKey: ["returns"],
     queryFn: () => fetchArray("/api/returns"),
@@ -35,12 +38,14 @@ export default function ReturnRegisterReportPage() {
   ];
 
   return (
-    <Card title="Return Register" subtitle="All sales returns" actions={<ExportActions columns={columns} rows={rows} filename="return-register" />}>
+    <ScreenGuard screen="Return Register">
+    <Card title="Return Register" subtitle="All sales returns" actions={rights.print ? <ExportActions columns={columns} rows={rows} filename="return-register" /> : undefined}>
       {isLoading ? (
         <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div>
       ) : (
         <DataTable columns={columns} rows={rows} rowKey={(r) => r.id} empty="No returns found" />
       )}
     </Card>
+    </ScreenGuard>
   );
 }

@@ -14,6 +14,8 @@ import { ExportActions, KeyValue } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
 import { Eye, Pencil, Trash2, PackagePlus, ToggleLeft, ToggleRight } from "lucide-react";
 import { toast } from "sonner";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 type CategoryOption = { id: string; code: string; name: string };
 type SubOption = { id: string; code: string; name: string; parentId: string };
@@ -75,6 +77,7 @@ function fmt(val: number | string) {
 
 export default function ProductsPage() {
   const qc = useQueryClient();
+  const rights = useRights("Products");
   const [show, setShow] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
@@ -348,31 +351,34 @@ export default function ProductsPage() {
       render: (r) => (
         <span className="no-print" style={{ display: "inline-flex", gap: 4, justifyContent: "flex-end" }}>
           <IconButton label="View" size="sm" onClick={() => setViewing(r)}><Eye size={14} color="#38bdf8" /></IconButton>
-          <IconButton label="Edit" size="sm" onClick={() => openEdit(r)}><Pencil size={14} color="#4ade80" /></IconButton>
-          <IconButton label="Adjust stock" size="sm" onClick={() => openAdjust(r)}><PackagePlus size={14} color="#a78bfa" /></IconButton>
-          <IconButton
-            label={r.active ? "Deactivate" : "Activate"}
-            size="sm"
-            onClick={() => toggleMutation.mutate({ id: r.id, active: !r.active })}
-          >
-            {r.active
-              ? <ToggleRight size={14} color="#facc15" />
-              : <ToggleLeft size={14} color="#facc15" />}
-          </IconButton>
-          <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete(r)}><Trash2 size={14} color="#f87171" /></IconButton>
+          {rights.edit && <IconButton label="Edit" size="sm" onClick={() => openEdit(r)}><Pencil size={14} color="#4ade80" /></IconButton>}
+          {rights.edit && <IconButton label="Adjust stock" size="sm" onClick={() => openAdjust(r)}><PackagePlus size={14} color="#a78bfa" /></IconButton>}
+          {rights.edit && (
+            <IconButton
+              label={r.active ? "Deactivate" : "Activate"}
+              size="sm"
+              onClick={() => toggleMutation.mutate({ id: r.id, active: !r.active })}
+            >
+              {r.active
+                ? <ToggleRight size={14} color="#facc15" />
+                : <ToggleLeft size={14} color="#facc15" />}
+            </IconButton>
+          )}
+          {rights.delete && <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete(r)}><Trash2 size={14} color="#f87171" /></IconButton>}
         </span>
       ),
     },
   ];
 
   return (
+    <ScreenGuard screen="Products">
     <>
       <Card
         title="Products"
         actions={
           <>
-            <ExportActions columns={columns} rows={products} filename="products" />
-            <Button onClick={openAdd}>Add product</Button>
+            {rights.print && <ExportActions columns={columns} rows={products} filename="products" />}
+            {rights.create && <Button onClick={openAdd}>Add product</Button>}
           </>
         }
       >
@@ -638,5 +644,6 @@ export default function ProductsPage() {
         )}
       </Modal>
     </>
+    </ScreenGuard>
   );
 }

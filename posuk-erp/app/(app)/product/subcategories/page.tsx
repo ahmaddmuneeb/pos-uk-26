@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ListScreen } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 type CategoryOption = { id: string; code: string; name: string };
 type SubCategoryRow = { id: string; code: string; name: string; parentId: string; parentName: string };
@@ -43,6 +44,7 @@ export default function SubCategoriesPage() {
   });
 
   return (
+    <ScreenGuard screen="Sub Categories">
     <ListScreen
       title="Sub-categories"
       addLabel="Add sub-category"
@@ -68,5 +70,6 @@ export default function SubCategoriesPage() {
       }}
       onDelete={(id) => remove.mutateAsync(id)}
     />
+    </ScreenGuard>
   );
 }

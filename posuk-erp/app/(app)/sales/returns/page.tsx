@@ -11,11 +11,13 @@ import { Select } from "@/components/forms/Select";
 import { Input } from "@/components/forms/Input";
 import { TotalsBar, ExportActions } from "@/components/ui/ScreenHelpers";
 import { LineItems, docTotals, DocLine } from "@/components/ui/LineItems";
-import { fmt } from "@/lib/currency";
+import { fmt, currencySymbol } from "@/lib/currency";
 import { getCompanyInfo, returnDoc, openPrintWindow, ReturnPrintData } from "@/lib/printDoc";
 import { fetchArray } from "@/lib/fetchJson";
 import { toast } from "sonner";
 import { Eye, Printer, Trash2 } from "lucide-react";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -65,6 +67,7 @@ function last6Months() {
 
 export default function ReturnsPage() {
   const qc = useQueryClient();
+  const rights = useRights("Sale Returns");
   const { data: rows = [], isLoading } = useQuery<ReturnRow[]>({ queryKey: ["returns"], queryFn: () => fetchArray("/api/returns") });
   const { data: invoices = [] } = useQuery<InvoiceOpt[]>({ queryKey: ["invoices"], queryFn: () => fetchArray("/api/invoices") });
   const { data: products = [] } = useQuery<{ id: string; sku: string; name: string; wholesaleRate: string | number }[]>({ queryKey: ["products"], queryFn: () => fetchArray("/api/products") });
@@ -145,14 +148,15 @@ export default function ReturnsPage() {
       render: (r) => (
         <span className="no-print" style={{ display: "inline-flex", gap: 4, justifyContent: "flex-end" }}>
           <IconButton label="View" size="sm" onClick={() => setViewing(r)}><Eye size={14} color="#38bdf8" /></IconButton>
-          <IconButton label="Print" size="sm" onClick={() => printReturn(r)}><Printer size={14} color="#a78bfa" /></IconButton>
-          <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete({ id: r.id, no: r.no })}><Trash2 size={14} color="#f87171" /></IconButton>
+          {rights.print && <IconButton label="Print" size="sm" onClick={() => printReturn(r)}><Printer size={14} color="#a78bfa" /></IconButton>}
+          {rights.delete && <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete({ id: r.id, no: r.no })}><Trash2 size={14} color="#f87171" /></IconButton>}
         </span>
       ),
     },
   ];
 
   return (
+    <ScreenGuard screen="Sale Returns">
     <>
       {/* Stat summary */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginBottom: "1.25rem" }}>
@@ -181,7 +185,7 @@ export default function ReturnsPage() {
               <CartesianGrid {...gridProps} />
               <XAxis dataKey="month" tick={axisStyle} />
               <YAxis yAxisId="left" tick={axisStyle} allowDecimals={false} />
-              <YAxis yAxisId="right" orientation="right" tick={axisStyle} tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`} width={48} />
+              <YAxis yAxisId="right" orientation="right" tick={axisStyle} tickFormatter={(v) => `${currencySymbol()}${(v / 1000).toFixed(0)}k`} width={48} />
               <Tooltip cursor={false} content={<CurrencyTip />} />
               <Legend wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
               <Area yAxisId="left" type="monotone" dataKey="Returns" stroke="#f87171" fill="url(#gRet)" strokeWidth={2} dot={false} />
@@ -216,7 +220,7 @@ export default function ReturnsPage() {
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={topCustomers} layout="vertical" margin={{ top: 4, right: 16, left: 4, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1e293b" />
-                  <XAxis type="number" tick={axisStyle} tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`} width={48} />
+                  <XAxis type="number" tick={axisStyle} tickFormatter={(v) => `${currencySymbol()}${(v / 1000).toFixed(0)}k`} width={48} />
                   <YAxis type="category" dataKey="name" tick={axisStyle} width={120} />
                   <Tooltip cursor={false} content={<CurrencyTip />} />
                   <Bar dataKey="Value" fill="#f87171" radius={[0, 4, 4, 0]} />
@@ -227,7 +231,7 @@ export default function ReturnsPage() {
       </div>
 
       {/* Main table */}
-      <Card title="Sale Returns" actions={<><ExportActions columns={columns} rows={rows} filename="sale-returns" /><Button onClick={() => setShow(true)}>New return</Button></>}>
+      <Card title="Sale Returns" actions={<>{rights.print && <ExportActions columns={columns} rows={rows} filename="sale-returns" />}{rights.create && <Button onClick={() => setShow(true)}>New return</Button>}</>}>
         {isLoading ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div> : (
           <DataTable rowKey={(r) => r.id} columns={columns} rows={rows} />
         )}
@@ -258,7 +262,7 @@ export default function ReturnsPage() {
 
       {/* View modal */}
       <Modal open={!!viewing} title={viewing ? `Return ${viewing.no}` : ""} wide onClose={() => setViewing(null)}
-        footer={<><Button onClick={() => { if (viewing) printReturn(viewing); }}><Printer size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />Print</Button><Button variant="ghost" onClick={() => setViewing(null)}>Close</Button></>}>
+        footer={<>{rights.print && <Button onClick={() => { if (viewing) printReturn(viewing); }}><Printer size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />Print</Button>}<Button variant="ghost" onClick={() => setViewing(null)}>Close</Button></>}>
         {viewing && (
           <>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px 24px", marginBottom: 16 }}>
@@ -283,5 +287,6 @@ export default function ReturnsPage() {
         <p style={{ margin: 0, color: "var(--text)" }}>Are you sure you want to delete return <strong>{confirmDelete?.no}</strong>? This will reverse stock and ledger entries. This cannot be undone.</p>
       </Modal>
     </>
+    </ScreenGuard>
   );
 }

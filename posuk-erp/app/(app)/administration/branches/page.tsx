@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/data-display/Badge";
 import { ListScreen } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 export default function BranchesPage() {
   const qc = useQueryClient();
@@ -13,6 +14,7 @@ export default function BranchesPage() {
   });
 
   return (
+    <ScreenGuard screen="Branches">
     <ListScreen
       title="Branches"
       addLabel="Add branch"
@@ -35,5 +37,6 @@ export default function BranchesPage() {
       ]}
       onAdd={(form) => add.mutateAsync(form)}
     />
+    </ScreenGuard>
   );
 }

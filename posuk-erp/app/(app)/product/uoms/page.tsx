@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ListScreen } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 type UomRow = { id: string; code: string; name: string };
 
@@ -35,6 +36,7 @@ export default function UomsPage() {
   });
 
   return (
+    <ScreenGuard screen="UOM">
     <ListScreen
       title="Units of measure"
       addLabel="Add UOM"
@@ -52,5 +54,6 @@ export default function UomsPage() {
       onEdit={(id, form) => edit.mutateAsync({ id, data: form })}
       onDelete={(id) => remove.mutateAsync(id)}
     />
+    </ScreenGuard>
   );
 }

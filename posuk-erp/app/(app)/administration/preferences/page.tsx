@@ -10,6 +10,8 @@ import { Textarea } from "@/components/forms/Textarea";
 import { SubHead } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
 import { toast } from "sonner";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 const DEFAULTS: Record<string, string> = {
   company_name: "POS UK Wholesale Ltd",
@@ -31,6 +33,7 @@ const DEFAULTS: Record<string, string> = {
 
 export default function PreferencesPage() {
   const qc = useQueryClient();
+  const rights = useRights("Preferences");
   const { data = [] } = useQuery({ queryKey: ["preferences"], queryFn: () => fetchArray("/api/preferences") });
   const [form, setForm] = useState<Record<string, string>>(DEFAULTS);
 
@@ -51,7 +54,8 @@ export default function PreferencesPage() {
   });
 
   return (
-    <Card title="Preferences" subtitle="Company-wide defaults applied to documents, tax and numbering." actions={<Button onClick={() => save.mutate()} disabled={save.isPending}>Save changes</Button>}>
+    <ScreenGuard screen="Preferences">
+    <Card title="Preferences" subtitle="Company-wide defaults applied to documents, tax and numbering." actions={rights.edit ? <Button onClick={() => save.mutate()} disabled={save.isPending}>Save changes</Button> : undefined}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem 2rem", maxWidth: "52rem" }}>
         <div>
           <SubHead>Company</SubHead>
@@ -100,5 +104,6 @@ export default function PreferencesPage() {
         </div>
       </div>
     </Card>
+    </ScreenGuard>
   );
 }

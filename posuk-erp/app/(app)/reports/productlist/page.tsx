@@ -12,6 +12,8 @@ import { fmt } from "@/lib/currency";
 import { fetchArray } from "@/lib/fetchJson";
 import { openPrintWindow, simpleTableDoc } from "@/lib/printDoc";
 import { Eye, Printer } from "lucide-react";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 interface Product {
   id: string;
@@ -30,6 +32,7 @@ interface Product {
 }
 
 export default function ProductListReportPage() {
+  const rights = useRights("Product List");
   const [viewing, setViewing] = useState<Product | null>(null);
 
   const { data: rows = [], isLoading } = useQuery<Product[]>({
@@ -68,15 +71,16 @@ export default function ProductListReportPage() {
       render: (r) => (
         <span className="no-print" style={{ display: "inline-flex", gap: 4 }}>
           <IconButton label="View" size="sm" onClick={() => setViewing(r)}><Eye size={14} color="#38bdf8" /></IconButton>
-          <IconButton label="Print" size="sm" onClick={() => printProduct(r)}><Printer size={14} color="#a78bfa" /></IconButton>
+          {rights.print && <IconButton label="Print" size="sm" onClick={() => printProduct(r)}><Printer size={14} color="#a78bfa" /></IconButton>}
         </span>
       ),
     },
   ];
 
   return (
+    <ScreenGuard screen="Product List">
     <>
-      <Card title="Product List" subtitle="Master list of all products" actions={<ExportActions columns={columns} rows={rows} filename="product-list" />}>
+      <Card title="Product List" subtitle="Master list of all products" actions={rights.print ? <ExportActions columns={columns} rows={rows} filename="product-list" /> : undefined}>
         {isLoading ? (
           <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div>
         ) : (
@@ -91,9 +95,9 @@ export default function ProductListReportPage() {
         onClose={() => setViewing(null)}
         footer={
           <>
-            <Button onClick={() => { if (viewing) printProduct(viewing); }}>
+            {rights.print && <Button onClick={() => { if (viewing) printProduct(viewing); }}>
               <Printer size={14} style={{ marginRight: 6 }} />Print
-            </Button>
+            </Button>}
             <Button variant="ghost" onClick={() => setViewing(null)}>Close</Button>
           </>
         }
@@ -114,5 +118,6 @@ export default function ProductListReportPage() {
         )}
       </Modal>
     </>
+    </ScreenGuard>
   );
 }

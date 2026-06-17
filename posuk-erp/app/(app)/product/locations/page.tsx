@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ListScreen } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 type LocationRow = {
   id: string;
@@ -39,6 +40,7 @@ export default function LocationsPage() {
   });
 
   return (
+    <ScreenGuard screen="Stock Locations">
     <ListScreen
       title="Locations"
       addLabel="Add location"
@@ -56,5 +58,6 @@ export default function LocationsPage() {
       onEdit={(id, form) => edit.mutateAsync({ id, data: form })}
       onDelete={(id) => remove.mutateAsync(id)}
     />
+    </ScreenGuard>
   );
 }

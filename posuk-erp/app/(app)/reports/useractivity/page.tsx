@@ -6,6 +6,8 @@ import { DataTable, Column } from "@/components/data-display/DataTable";
 import { Badge } from "@/components/data-display/Badge";
 import { ExportActions } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -64,6 +66,7 @@ function last14Days() {
 }
 
 export default function UserActivityReportPage() {
+  const rights = useRights("User Activity");
   const { data: rows = [], isLoading } = useQuery<ActivityRow[]>({
     queryKey: ["useractivity"],
     queryFn: () => fetchArray("/api/reports/useractivity"),
@@ -112,6 +115,7 @@ export default function UserActivityReportPage() {
   ];
 
   return (
+    <ScreenGuard screen="User Activity">
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 
       {/* Stat summary */}
@@ -220,11 +224,12 @@ export default function UserActivityReportPage() {
       </Card>
 
       {/* Activity log table */}
-      <Card title="Activity log" subtitle="Last 200 entries" actions={<ExportActions columns={columns} rows={rows} filename="user-activity" />}>
+      <Card title="Activity log" subtitle="Last 200 entries" actions={rights.print ? <ExportActions columns={columns} rows={rows} filename="user-activity" /> : undefined}>
         {isLoading
           ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div>
           : <DataTable columns={columns} rows={rows} rowKey={(r) => r.id} empty="No activity recorded" />}
       </Card>
     </div>
+    </ScreenGuard>
   );
 }

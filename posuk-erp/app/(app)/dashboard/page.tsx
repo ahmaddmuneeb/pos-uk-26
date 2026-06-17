@@ -4,7 +4,7 @@ import { Card } from "@/components/data-display/Card";
 import { StatCard } from "@/components/data-display/StatCard";
 import { DataTable, Column } from "@/components/data-display/DataTable";
 import { Badge } from "@/components/data-display/Badge";
-import { fmt } from "@/lib/currency";
+import { fmt, currencySymbol } from "@/lib/currency";
 import { fetchArray } from "@/lib/fetchJson";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -170,7 +170,7 @@ export default function DashboardPage() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" {...gridStyle} />
               <XAxis dataKey="month" tick={axisStyle} />
-              <YAxis tick={axisStyle} tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`} width={48} />
+              <YAxis tick={axisStyle} tickFormatter={(v) => `${currencySymbol()}${(v / 1000).toFixed(0)}k`} width={48} />
               <Tooltip cursor={false} content={<CurrencyTooltip />} />
               <Legend wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
               <Area type="monotone" dataKey="Sales" stroke="#22d3ee" fill="url(#gradSales)" strokeWidth={2} dot={false} />
@@ -207,7 +207,7 @@ export default function DashboardPage() {
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={topCustomers} layout="vertical" margin={{ top: 4, right: 16, left: 4, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} {...gridStyle} />
-                <XAxis type="number" tick={axisStyle} tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`} width={48} />
+                <XAxis type="number" tick={axisStyle} tickFormatter={(v) => `${currencySymbol()}${(v / 1000).toFixed(0)}k`} width={48} />
                 <YAxis type="category" dataKey="name" tick={axisStyle} width={110} />
                 <Tooltip cursor={false} content={<CurrencyTooltip />} />
                 <Bar dataKey="Revenue" fill="#a78bfa" radius={[0, 4, 4, 0]} />
@@ -221,7 +221,7 @@ export default function DashboardPage() {
             <BarChart data={receiptsTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" {...gridStyle} />
               <XAxis dataKey="month" tick={axisStyle} />
-              <YAxis tick={axisStyle} tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`} width={48} />
+              <YAxis tick={axisStyle} tickFormatter={(v) => `${currencySymbol()}${(v / 1000).toFixed(0)}k`} width={48} />
               <Tooltip cursor={false} content={<CurrencyTooltip />} />
               <Bar dataKey="Receipts" fill="#4ade80" radius={[4, 4, 0, 0]} />
             </BarChart>

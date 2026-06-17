@@ -6,6 +6,8 @@ import { DataTable, Column } from "@/components/data-display/DataTable";
 import { Badge } from "@/components/data-display/Badge";
 import { ExportActions } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   PieChart, Pie, Cell, ResponsiveContainer,
@@ -32,6 +34,7 @@ const CHART_STYLE: React.CSSProperties = {
 };
 
 export default function StockSummaryReportPage() {
+  const rights = useRights("Stock Summary");
   const { data: rows = [], isLoading } = useQuery<StockSummaryRow[]>({
     queryKey: ["stocksummary"],
     queryFn: () => fetchArray("/api/reports/stocksummary"),
@@ -99,14 +102,17 @@ export default function StockSummaryReportPage() {
 
   if (isLoading) {
     return (
+      <ScreenGuard screen="Stock Summary">
       <Card title="Stock Summary" subtitle="Movement and balance by product">
         <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div>
       </Card>
+      </ScreenGuard>
     );
   }
 
   return (
-    <Card title="Stock Summary" subtitle="Movement and balance by product" actions={<ExportActions columns={columns} rows={rows} filename="stock-summary" />}>
+    <ScreenGuard screen="Stock Summary">
+    <Card title="Stock Summary" subtitle="Movement and balance by product" actions={rights.print ? <ExportActions columns={columns} rows={rows} filename="stock-summary" /> : undefined}>
 
       {/* Charts row */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
@@ -181,5 +187,6 @@ export default function StockSummaryReportPage() {
       {/* Table */}
       <DataTable columns={columns} rows={rows} rowKey={(r) => r.id} empty="No stock data" />
     </Card>
+    </ScreenGuard>
   );
 }

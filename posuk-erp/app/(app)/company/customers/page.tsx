@@ -16,6 +16,8 @@ import { fmt } from "@/lib/currency";
 import { fetchArray } from "@/lib/fetchJson";
 import { Eye, Pencil, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import { useToast } from "@/components/feedback/Toast";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 interface CustType { id: string; name: string }
 
@@ -55,6 +57,7 @@ const emptyForm = {
 export default function CustomersPage() {
   const qc = useQueryClient();
   const toast = useToast();
+  const rights = useRights("Customers");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [selected, setSelected] = useState<Customer | null>(null);
@@ -237,17 +240,19 @@ export default function CustomersPage() {
       render: (r) => (
         <span className="no-print" style={{ display: "inline-flex", gap: "0.25rem" }}>
           <IconButton label="View" size="sm" onClick={(e) => { (e as React.MouseEvent).stopPropagation(); setViewing(r); }}><Eye size={14} color="#38bdf8" /></IconButton>
-          <IconButton label="Edit" size="sm" onClick={(e) => { (e as React.MouseEvent).stopPropagation(); openEdit(r); }}><Pencil size={14} color="#4ade80" /></IconButton>
-          <IconButton
-            label={r.active ? "Deactivate" : "Activate"}
-            size="sm"
-            onClick={(e) => { (e as React.MouseEvent).stopPropagation(); toggleActiveMutation.mutate({ id: r.id, active: !r.active }); }}
-          >
-            {r.active
-              ? <ToggleRight size={14} color="#facc15" />
-              : <ToggleLeft size={14} color="#facc15" />}
-          </IconButton>
-          <IconButton label="Delete" size="sm" onClick={(e) => { (e as React.MouseEvent).stopPropagation(); setConfirmDelete(r); }}><Trash2 size={14} color="#f87171" /></IconButton>
+          {rights.edit && <IconButton label="Edit" size="sm" onClick={(e) => { (e as React.MouseEvent).stopPropagation(); openEdit(r); }}><Pencil size={14} color="#4ade80" /></IconButton>}
+          {rights.edit && (
+            <IconButton
+              label={r.active ? "Deactivate" : "Activate"}
+              size="sm"
+              onClick={(e) => { (e as React.MouseEvent).stopPropagation(); toggleActiveMutation.mutate({ id: r.id, active: !r.active }); }}
+            >
+              {r.active
+                ? <ToggleRight size={14} color="#facc15" />
+                : <ToggleLeft size={14} color="#facc15" />}
+            </IconButton>
+          )}
+          {rights.delete && <IconButton label="Delete" size="sm" onClick={(e) => { (e as React.MouseEvent).stopPropagation(); setConfirmDelete(r); }}><Trash2 size={14} color="#f87171" /></IconButton>}
         </span>
       ),
     },
@@ -295,19 +300,20 @@ export default function CustomersPage() {
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
   return (
+    <ScreenGuard screen="Customers">
     <>
       <Card
         title={selected ? undefined : "Customers"}
         actions={
           selected ? (
             <>
-              <ExportActions columns={ledgerColumns} rows={ledger} filename={`ledger-${selected.code}`} />
+              {rights.print && <ExportActions columns={ledgerColumns} rows={ledger} filename={`ledger-${selected.code}`} />}
               <Button variant="ghost" onClick={() => setSelected(null)}>← Back to list</Button>
             </>
           ) : (
             <>
-              <ExportActions columns={columns} rows={filteredCustomers} filename="customers" />
-              <Button onClick={() => setShowAdd(true)}>Add Customer</Button>
+              {rights.print && <ExportActions columns={columns} rows={filteredCustomers} filename="customers" />}
+              {rights.create && <Button onClick={() => setShowAdd(true)}>Add Customer</Button>}
             </>
           )
         }
@@ -470,5 +476,6 @@ export default function CustomersPage() {
         </div>
       </Modal>
     </>
+    </ScreenGuard>
   );
 }

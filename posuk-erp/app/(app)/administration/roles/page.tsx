@@ -9,6 +9,8 @@ import { Input } from "@/components/forms/Input";
 import { fetchArray } from "@/lib/fetchJson";
 import { toast } from "sonner";
 import { Edit2, Trash2, Plus, X, Check } from "lucide-react";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 interface Role { id: string; name: string; userCount: number }
 
@@ -28,6 +30,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 
 export default function RolesPage() {
   const qc = useQueryClient();
+  const rights = useRights("User Rights");
   const { data: roles = [], isLoading } = useQuery<Role[]>({
     queryKey: ["roles"],
     queryFn: () => fetchArray("/api/roles"),
@@ -74,30 +77,33 @@ export default function RolesPage() {
       key: "id", header: "Actions", width: 100,
       render: (r) => (
         <div style={{ display: "flex", gap: 6 }}>
-          <button
+          {rights.edit && <button
             title="Edit"
             onClick={() => { setEditRole(r); setEditName(r.name); }}
             style={{ width: 28, height: 28, borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "transparent", color: "var(--text-subtle)", cursor: "pointer", display: "grid", placeItems: "center" }}
-          ><Edit2 size={13} /></button>
-          <button
+          ><Edit2 size={13} /></button>}
+          {rights.delete && <button
             title="Delete"
             onClick={() => { if (confirm(`Delete role "${r.name}"?`)) remove.mutate(r.id); }}
             style={{ width: 28, height: 28, borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "transparent", color: "var(--text-subtle)", cursor: "pointer", display: "grid", placeItems: "center" }}
-          ><Trash2 size={13} /></button>
+          ><Trash2 size={13} /></button>}
         </div>
       ),
     },
   ];
 
   return (
+    <ScreenGuard screen="User Rights">
     <>
       <Card
         title="Roles"
         subtitle="Create and manage user roles."
         actions={
-          <Button onClick={() => { setShowAdd(true); setAddName(""); }}>
-            <Plus size={14} style={{ marginRight: 4 }} /> Add role
-          </Button>
+          rights.create ? (
+            <Button onClick={() => { setShowAdd(true); setAddName(""); }}>
+              <Plus size={14} style={{ marginRight: 4 }} /> Add role
+            </Button>
+          ) : undefined
         }
       >
         {isLoading
@@ -144,5 +150,6 @@ export default function RolesPage() {
         </Modal>
       )}
     </>
+    </ScreenGuard>
   );
 }

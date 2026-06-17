@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ListScreen } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 interface CustType {
   id: string;
@@ -54,6 +55,7 @@ export default function CustTypesPage() {
   });
 
   return (
+    <ScreenGuard screen="Customer Types">
     <ListScreen
       title="Customer Types"
       addLabel="Add Customer Type"
@@ -67,12 +69,13 @@ export default function CustTypesPage() {
           render: (r) => (r as unknown as CustType)._count.customers,
         },
       ]}
-      rows={rows}
+      rows={rows as unknown as Record<string, unknown>[]}
       formFields={formFields}
       onAdd={(form) => addMutation.mutateAsync(form)}
       onEdit={(id, form) => editMutation.mutateAsync({ id, form })}
       onDelete={(id) => deleteMutation.mutateAsync(id)}
       loading={isLoading}
     />
+    </ScreenGuard>
   );
 }

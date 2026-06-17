@@ -12,11 +12,13 @@ import { Select } from "@/components/forms/Select";
 import { Input } from "@/components/forms/Input";
 import { Toolbar, TotalsBar, ExportActions, KeyValue } from "@/components/ui/ScreenHelpers";
 import { LineItems, docTotals, DocLine } from "@/components/ui/LineItems";
-import { fmt } from "@/lib/currency";
+import { fmt, currencySymbol } from "@/lib/currency";
 import { getCompanyInfo, invoiceDoc, openPrintWindow, InvoicePrintData } from "@/lib/printDoc";
 import { fetchArray } from "@/lib/fetchJson";
 import { toast } from "sonner";
 import { Eye, Printer, Trash2, RefreshCw } from "lucide-react";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -68,6 +70,7 @@ type InvoiceRow = {
 
 export default function InvoicesPage() {
   const qc = useQueryClient();
+  const rights = useRights("Sale Invoices");
   const { data: rows = [], isLoading } = useQuery({ queryKey: ["invoices"], queryFn: () => fetchArray<InvoiceRow>("/api/invoices") });
   const { data: customers = [] } = useQuery<Customer[]>({ queryKey: ["customers"], queryFn: () => fetchArray("/api/customers") });
   const { data: salePersons = [] } = useQuery<SalePerson[]>({ queryKey: ["salepersons"], queryFn: () => fetchArray("/api/salepersons") });
@@ -173,15 +176,16 @@ export default function InvoicesPage() {
       render: (r) => (
         <span className="no-print" style={{ display: "inline-flex", gap: 4, justifyContent: "flex-end" }}>
           <IconButton label="View" size="sm" disabled={loadingId === r.id} onClick={() => openView(r.id)}><Eye size={14} color="#38bdf8" /></IconButton>
-          <IconButton label="Print" size="sm" disabled={loadingId === r.id} onClick={() => printInvoice(r.id)}><Printer size={14} color="#a78bfa" /></IconButton>
-          <IconButton label="Update status" size="sm" onClick={() => { setStatusModal({ id: r.id, no: r.no, status: r.status }); setNewStatus(r.status); }}><RefreshCw size={14} color="#4ade80" /></IconButton>
-          <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete({ id: r.id, no: r.no })}><Trash2 size={14} color="#f87171" /></IconButton>
+          {rights.print && <IconButton label="Print" size="sm" disabled={loadingId === r.id} onClick={() => printInvoice(r.id)}><Printer size={14} color="#a78bfa" /></IconButton>}
+          {rights.edit && <IconButton label="Update status" size="sm" onClick={() => { setStatusModal({ id: r.id, no: r.no, status: r.status }); setNewStatus(r.status); }}><RefreshCw size={14} color="#4ade80" /></IconButton>}
+          {rights.delete && <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete({ id: r.id, no: r.no })}><Trash2 size={14} color="#f87171" /></IconButton>}
         </span>
       ),
     },
   ];
 
   return (
+    <ScreenGuard screen="Sale Invoices">
     <>
       {/* Stat summary */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginBottom: "1.25rem" }}>
@@ -209,7 +213,7 @@ export default function InvoicesPage() {
               </defs>
               <CartesianGrid {...gridProps} />
               <XAxis dataKey="month" tick={axisStyle} />
-              <YAxis tick={axisStyle} tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`} width={48} />
+              <YAxis tick={axisStyle} tickFormatter={(v) => `${currencySymbol()}${(v / 1000).toFixed(0)}k`} width={48} />
               <Tooltip cursor={false} content={<CurrencyTip />} />
               <Legend wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
               <Area type="monotone" dataKey="Revenue" stroke="#22d3ee" fill="url(#gRev)" strokeWidth={2} dot={false} />
@@ -244,7 +248,7 @@ export default function InvoicesPage() {
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={topCustomers} layout="vertical" margin={{ top: 4, right: 16, left: 4, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1e293b" />
-                  <XAxis type="number" tick={axisStyle} tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`} width={48} />
+                  <XAxis type="number" tick={axisStyle} tickFormatter={(v) => `${currencySymbol()}${(v / 1000).toFixed(0)}k`} width={48} />
                   <YAxis type="category" dataKey="name" tick={axisStyle} width={120} />
                   <Tooltip cursor={false} content={<CurrencyTip />} />
                   <Bar dataKey="Revenue" fill="#a78bfa" radius={[0, 4, 4, 0]} />
@@ -273,7 +277,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* Main table */}
-      <Card title="Sale Invoices" actions={<><ExportActions columns={columns} rows={filtered} filename="sale-invoices" /><Button onClick={() => setShow(true)}>New invoice</Button><Button variant="ghost" onClick={() => qc.invalidateQueries({ queryKey: ["invoices"] })}>Refresh</Button></>}>
+      <Card title="Sale Invoices" actions={<>{rights.print && <ExportActions columns={columns} rows={filtered} filename="sale-invoices" />}{rights.create && <Button onClick={() => setShow(true)}>New invoice</Button>}<Button variant="ghost" onClick={() => qc.invalidateQueries({ queryKey: ["invoices"] })}>Refresh</Button></>}>
         <Toolbar>
           <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ width: "auto" }}>
             <option value="">All statuses</option><option>Paid</option><option>Partial</option><option>Overdue</option><option>Draft</option>
@@ -327,7 +331,7 @@ export default function InvoicesPage() {
 
       {/* View modal */}
       <Modal open={!!viewing} title={viewing ? `Invoice ${viewing.no}` : ""} wide onClose={() => setViewing(null)}
-        footer={<><Button onClick={() => { if (viewing) printInvoice("", viewing); }}><Printer size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />Print</Button><Button variant="ghost" onClick={() => setViewing(null)}>Close</Button></>}>
+        footer={<>{rights.print && <Button onClick={() => { if (viewing) printInvoice("", viewing); }}><Printer size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />Print</Button>}<Button variant="ghost" onClick={() => setViewing(null)}>Close</Button></>}>
         {viewing && (
           <>
             <KeyValue cols={3} items={[["Invoice No", viewing.no], ["Date", new Date(viewing.date).toLocaleDateString("en-GB")], ["Due Date", new Date(viewing.dueDate).toLocaleDateString("en-GB")], ["Customer", viewing.customerName], ["Sale Person", viewing.salePersonName ?? "—"], ["Status", viewing.status]]} />
@@ -358,5 +362,6 @@ export default function InvoicesPage() {
         <p style={{ margin: 0, color: "var(--text)" }}>Are you sure you want to delete invoice <strong>{confirmDelete?.no}</strong>? This will reverse all stock and ledger entries. This cannot be undone.</p>
       </Modal>
     </>
+    </ScreenGuard>
   );
 }

@@ -8,6 +8,8 @@ import { Button } from "@/components/core/Button";
 import { IconButton } from "@/components/core/IconButton";
 import { Modal } from "@/components/feedback/Modal";
 import { ToggleLeft, ToggleRight } from "lucide-react";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 import { Field } from "@/components/forms/Field";
 import { Input } from "@/components/forms/Input";
 import { Select } from "@/components/forms/Select";
@@ -18,6 +20,7 @@ import { toast } from "sonner";
 
 export default function UsersPage() {
   const qc = useQueryClient();
+  const rights = useRights("Users");
   const { data: session } = useSession();
   const myId = (session?.user as { id?: string })?.id;
   const { data: users = [], isLoading } = useQuery({ queryKey: ["users"], queryFn: () => fetchArray<Record<string, unknown>>("/api/users") });
@@ -59,25 +62,28 @@ export default function UsersPage() {
       key: "act", header: "Actions", align: "right",
       render: (r) => (
         <span className="no-print" style={{ display: "inline-flex", gap: 4 }}>
-          <IconButton
-            label={r.status === "Active" ? "Deactivate" : "Activate"}
-            size="sm"
-            onClick={() => {
-              if (r.id === myId) { toast.error("Cannot deactivate yourself."); return; }
-              toggleMutation.mutate({ id: r.id as string, username: r.username as string, status: r.status as string });
-            }}
-          >
-            {r.status === "Active"
-              ? <ToggleRight size={16} color="#facc15" />
-              : <ToggleLeft size={16} color="#facc15" />}
-          </IconButton>
+          {rights.edit && (
+            <IconButton
+              label={r.status === "Active" ? "Deactivate" : "Activate"}
+              size="sm"
+              onClick={() => {
+                if (r.id === myId) { toast.error("Cannot deactivate yourself."); return; }
+                toggleMutation.mutate({ id: r.id as string, username: r.username as string, status: r.status as string });
+              }}
+            >
+              {r.status === "Active"
+                ? <ToggleRight size={16} color="#facc15" />
+                : <ToggleLeft size={16} color="#facc15" />}
+            </IconButton>
+          )}
         </span>
       ),
     },
   ];
 
   return (
-    <Card title="Users" actions={<><ExportActions columns={columns} rows={users} filename="users" /><Button onClick={() => setShow(true)}>Add user</Button></>}>
+    <ScreenGuard screen="Users">
+    <Card title="Users" actions={<>{rights.print && <ExportActions columns={columns} rows={users} filename="users" />}{rights.create && <Button onClick={() => setShow(true)}>Add user</Button>}</>}>
       {isLoading ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div> : (
         <DataTable
           rowKey={(r) => r.id as string}
@@ -108,5 +114,6 @@ export default function UsersPage() {
         </div>
       </Modal>
     </Card>
+    </ScreenGuard>
   );
 }

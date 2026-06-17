@@ -16,6 +16,8 @@ import { getCompanyInfo, receiptDoc, openPrintWindow } from "@/lib/printDoc";
 import { fetchArray } from "@/lib/fetchJson";
 import { Eye, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 interface Customer { id: string; name: string; code: string }
 
@@ -49,6 +51,7 @@ const emptyForm = {
 
 export default function ReceiptsPage() {
   const qc = useQueryClient();
+  const rights = useRights("Customer Receipts");
   const [form, setForm] = useState({ ...emptyForm });
   const [posting, setPosting] = useState(false);
   const [viewing, setViewing] = useState<Receipt | null>(null);
@@ -164,21 +167,22 @@ export default function ReceiptsPage() {
           <IconButton label="View" size="sm" onClick={() => setViewing(r)}>
             <Eye size={14} color="#38bdf8" />
           </IconButton>
-          <IconButton label="Print" size="sm" onClick={() => printReceipt(r)}>
+          {rights.print && <IconButton label="Print" size="sm" onClick={() => printReceipt(r)}>
             <Printer size={14} color="#a78bfa" />
-          </IconButton>
-          <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete(r)}>
+          </IconButton>}
+          {rights.delete && <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete(r)}>
             <Trash2 size={14} color="#f87171" />
-          </IconButton>
+          </IconButton>}
         </span>
       ),
     },
   ];
 
   return (
+    <ScreenGuard screen="Customer Receipts">
     <>
-      <Card title="Customer Receipts" actions={<ExportActions columns={columns} rows={receipts} filename="customer-receipts" />}>
-        <div style={{ marginBottom: "1.5rem", padding: "1rem", background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
+      <Card title="Customer Receipts" actions={rights.print ? <ExportActions columns={columns} rows={receipts} filename="customer-receipts" /> : undefined}>
+        {rights.create && <div style={{ marginBottom: "1.5rem", padding: "1rem", background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
           <SubHead>Post Receipt</SubHead>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12, alignItems: "flex-end" }}>
             <Field label="Customer" style={{ gridColumn: "span 2" }}>
@@ -211,7 +215,7 @@ export default function ReceiptsPage() {
               </Button>
             </div>
           </div>
-        </div>
+        </div>}
 
         <SubHead>Recent Receipts</SubHead>
         {isLoading ? (
@@ -228,9 +232,9 @@ export default function ReceiptsPage() {
         onClose={() => setViewing(null)}
         footer={
           <>
-            <Button onClick={() => { if (viewing) printReceipt(viewing); }}>
+            {rights.print && <Button onClick={() => { if (viewing) printReceipt(viewing); }}>
               <Printer size={14} style={{ marginRight: 6 }} />Print
-            </Button>
+            </Button>}
             <Button variant="ghost" onClick={() => setViewing(null)}>Close</Button>
           </>
         }
@@ -266,5 +270,6 @@ export default function ReceiptsPage() {
         </p>
       </Modal>
     </>
+    </ScreenGuard>
   );
 }

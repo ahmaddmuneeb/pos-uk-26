@@ -14,6 +14,8 @@ import { KeyValue, ExportActions } from "@/components/ui/ScreenHelpers";
 import { fetchArray } from "@/lib/fetchJson";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 interface SalePerson {
   id: string;
@@ -28,6 +30,7 @@ const emptyForm = { name: "", designation: "", region: "", commission: "0", stat
 
 export default function SalePersonsPage() {
   const qc = useQueryClient();
+  const rights = useRights("Sale Persons");
   const [viewing, setViewing] = useState<SalePerson | null>(null);
   const [editing, setEditing] = useState<SalePerson | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -138,18 +141,19 @@ export default function SalePersonsPage() {
       render: (r) => (
         <span className="no-print" style={{ display: "inline-flex", gap: 4 }}>
           <IconButton label="View" size="sm" onClick={() => setViewing(r)}><Eye size={14} color="#38bdf8" /></IconButton>
-          <IconButton label="Edit" size="sm" onClick={() => openEdit(r)}><Pencil size={14} color="#4ade80" /></IconButton>
-          <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete(r)}><Trash2 size={14} color="#f87171" /></IconButton>
+          {rights.edit && <IconButton label="Edit" size="sm" onClick={() => openEdit(r)}><Pencil size={14} color="#4ade80" /></IconButton>}
+          {rights.delete && <IconButton label="Delete" size="sm" onClick={() => setConfirmDelete(r)}><Trash2 size={14} color="#f87171" /></IconButton>}
         </span>
       ),
     },
   ];
 
   return (
+    <ScreenGuard screen="Sale Persons">
     <>
       <Card
         title="Sale Persons"
-        actions={<><ExportActions columns={columns} rows={rows} filename="salepersons" /><Button onClick={() => { setForm({ ...emptyForm }); setShowAdd(true); }}>Add Sale Person</Button></>}
+        actions={<>{rights.print && <ExportActions columns={columns} rows={rows} filename="salepersons" />}{rights.create && <Button onClick={() => { setForm({ ...emptyForm }); setShowAdd(true); }}>Add Sale Person</Button>}</>}
       >
         {isLoading ? (
           <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-subtle)" }}>Loading…</div>
@@ -224,5 +228,6 @@ export default function SalePersonsPage() {
         </p>
       </Modal>
     </>
+    </ScreenGuard>
   );
 }

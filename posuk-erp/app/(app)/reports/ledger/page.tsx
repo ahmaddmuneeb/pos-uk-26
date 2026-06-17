@@ -13,6 +13,8 @@ import { fmt } from "@/lib/currency";
 import { getCompanyInfo, ledgerDoc, openPrintWindow } from "@/lib/printDoc";
 import { fetchArray } from "@/lib/fetchJson";
 import { Eye, Printer } from "lucide-react";
+import { useRights } from "@/components/auth/RightsContext";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 
 interface Customer {
   id: string;
@@ -32,6 +34,7 @@ interface LedgerRow {
 }
 
 export default function LedgerReportPage() {
+  const rights = useRights("Ledger");
   const [customerId, setCustomerId] = useState("");
   const [viewing, setViewing] = useState<LedgerRow | null>(null);
 
@@ -80,15 +83,16 @@ export default function LedgerReportPage() {
       render: (r) => (
         <span className="no-print" style={{ display: "inline-flex", gap: 4 }}>
           <IconButton label="View" size="sm" onClick={() => setViewing(r)}><Eye size={14} color="#38bdf8" /></IconButton>
-          <IconButton label="Print" size="sm" onClick={() => printLedgerRow(r)}><Printer size={14} color="#a78bfa" /></IconButton>
+          {rights.print && <IconButton label="Print" size="sm" onClick={() => printLedgerRow(r)}><Printer size={14} color="#a78bfa" /></IconButton>}
         </span>
       ),
     },
   ];
 
   return (
+    <ScreenGuard screen="Ledger">
     <>
-    <Card title="Customer Ledger" subtitle="Statement of account by customer" actions={<ExportActions columns={columns} rows={ledger} filename="customer-ledger" />}>
+    <Card title="Customer Ledger" subtitle="Statement of account by customer" actions={rights.print ? <ExportActions columns={columns} rows={ledger} filename="customer-ledger" /> : undefined}>
       <Toolbar>
         <Field label="Customer">
           <Select value={customerId} onChange={(e) => setCustomerId(e.target.value)} style={{ width: 280 }}>
@@ -116,9 +120,9 @@ export default function LedgerReportPage() {
         onClose={() => setViewing(null)}
         footer={
           <>
-            <Button onClick={() => { if (viewing) printLedgerRow(viewing); }}>
+            {rights.print && <Button onClick={() => { if (viewing) printLedgerRow(viewing); }}>
               <Printer size={14} style={{ marginRight: 6 }} />Print
-            </Button>
+            </Button>}
             <Button variant="ghost" onClick={() => setViewing(null)}>Close</Button>
           </>
         }
@@ -136,5 +140,6 @@ export default function LedgerReportPage() {
         )}
       </Modal>
     </>
+    </ScreenGuard>
   );
 }
