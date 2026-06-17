@@ -6,10 +6,13 @@ import { DataTable, Column } from "@/components/data-display/DataTable";
 import { Select } from "@/components/forms/Select";
 import { Field } from "@/components/forms/Field";
 import { IconButton } from "@/components/core/IconButton";
-import { Toolbar, ExportActions } from "@/components/ui/ScreenHelpers";
+import { Modal } from "@/components/feedback/Modal";
+import { Button } from "@/components/core/Button";
+import { Toolbar, KeyValue, ExportActions } from "@/components/ui/ScreenHelpers";
 import { fmt } from "@/lib/currency";
 import { getCompanyInfo, ledgerDoc, openPrintWindow } from "@/lib/printDoc";
 import { fetchArray } from "@/lib/fetchJson";
+import { Eye, Printer } from "lucide-react";
 
 interface Customer {
   id: string;
@@ -30,6 +33,7 @@ interface LedgerRow {
 
 export default function LedgerReportPage() {
   const [customerId, setCustomerId] = useState("");
+  const [viewing, setViewing] = useState<LedgerRow | null>(null);
 
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ["customers"],
@@ -71,10 +75,19 @@ export default function LedgerReportPage() {
         </span>
       ),
     },
-    { key: "act", header: "", align: "right", render: (r) => <span className="no-print" style={{ display: "inline-flex", justifyContent: "flex-end" }}><IconButton label="Print" size="sm" onClick={() => printLedgerRow(r)}>⎙</IconButton></span> },
+    {
+      key: "act", header: "Actions", align: "right",
+      render: (r) => (
+        <span className="no-print" style={{ display: "inline-flex", gap: 4 }}>
+          <IconButton label="View" size="sm" onClick={() => setViewing(r)}><Eye size={14} color="#38bdf8" /></IconButton>
+          <IconButton label="Print" size="sm" onClick={() => printLedgerRow(r)}><Printer size={14} color="#a78bfa" /></IconButton>
+        </span>
+      ),
+    },
   ];
 
   return (
+    <>
     <Card title="Customer Ledger" subtitle="Statement of account by customer" actions={<ExportActions columns={columns} rows={ledger} filename="customer-ledger" />}>
       <Toolbar>
         <Field label="Customer">
@@ -96,5 +109,32 @@ export default function LedgerReportPage() {
         <DataTable columns={columns} rows={ledger} rowKey={(r) => r.id} empty="No ledger entries" />
       )}
     </Card>
+
+      <Modal
+        open={!!viewing}
+        title={`${viewing?.docType ?? ""} — ${viewing?.docNo ?? ""}`}
+        onClose={() => setViewing(null)}
+        footer={
+          <>
+            <Button onClick={() => { if (viewing) printLedgerRow(viewing); }}>
+              <Printer size={14} style={{ marginRight: 6 }} />Print
+            </Button>
+            <Button variant="ghost" onClick={() => setViewing(null)}>Close</Button>
+          </>
+        }
+      >
+        {viewing && (
+          <KeyValue cols={2} items={[
+            ["Doc No", viewing.docNo],
+            ["Date", new Date(viewing.date).toLocaleDateString("en-GB")],
+            ["Type", viewing.docType],
+            ["Narration", viewing.narration ?? "—"],
+            ["Debit", viewing.debit > 0 ? fmt(viewing.debit) : "—"],
+            ["Credit", viewing.credit > 0 ? fmt(viewing.credit) : "—"],
+            ["Balance", <span key="b" style={{ color: viewing.balance > 0 ? "var(--danger)" : "var(--success)", fontWeight: 600 }}>{fmt(Math.abs(viewing.balance))}{viewing.balance < 0 ? " CR" : ""}</span>],
+          ]} />
+        )}
+      </Modal>
+    </>
   );
 }
