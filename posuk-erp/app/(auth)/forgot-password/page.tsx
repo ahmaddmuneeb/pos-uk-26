@@ -17,12 +17,17 @@ export default function ForgotPasswordPage() {
     setBusy(true);
     setError("");
     try {
-      await fetch("/api/auth/forgot-password", {
+      const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      setSent(true);
+      if (!res.ok) {
+        const j = await res.json();
+        setError(j.error ?? "Failed to send email. Please try again.");
+      } else {
+        setSent(true);
+      }
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

@@ -3,20 +3,24 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const Schema = z.object({ email: z.string().email() });
 
 export async function POST(req: Request) {
   try {
     const { email } = Schema.parse(await req.json());
     const user = await db.user.findUnique({ where: { email } });
+
     if (user) {
       await db.passwordResetToken.deleteMany({ where: { userId: user.id, used: false } });
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
       const { token } = await db.passwordResetToken.create({ data: { userId: user.id, expiresAt } });
       const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`;
-      await resend.emails.send({
-        from: process.env.RESEND_FROM ?? "POS ERP <onboarding@resend.dev>",
+
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const from = process.env.RESEND_FROM ?? "POS ERP <onboarding@resend.dev>";
+
+      const { data, error } = await resend.emails.send({
+        from,
         to: email,
         subject: "Reset your password",
         html: `
@@ -27,9 +31,20 @@ export async function POST(req: Request) {
             <p style="margin:1.5rem 0 0;font-size:0.8rem;color:#94a3b8">If you didn't request this, you can safely ignore this email.</p>
           </div>`,
       });
+
+      if (error) {
+        console.error("[forgot-password] Resend error:", error);
+        return NextResponse.json({ error: error.message }, { status: 502 });
+      }
+
+      console.log("[forgot-password] Email sent:", data?.id);
+    } else {
+      console.log("[forgot-password] No user found for email:", email);
     }
+
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error("[forgot-password] Unexpected error:", e);
+    return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
   }
 }
