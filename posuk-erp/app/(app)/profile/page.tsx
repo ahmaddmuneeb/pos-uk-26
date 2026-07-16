@@ -35,7 +35,7 @@ function Chip({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
       <span style={{ fontSize: "var(--fs-2xs)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "var(--tracking-wide)", color: "var(--text-subtle)" }}>{label}</span>
-      <span style={{ fontSize: "var(--fs-sm)", fontWeight: 600, color: "var(--text)", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: "0.35rem 0.75rem", display: "inline-block" }}>{value}</span>
+      <span style={{ fontSize: "var(--fs-sm)", fontWeight: 600, color: "var(--text)", background: "var(--overlay-subtle)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: "0.35rem 0.75rem", display: "inline-block" }}>{value}</span>
     </div>
   );
 }

@@ -103,7 +103,7 @@ function CollapseIconBtn({ entry, active, onClick }: { entry: NavEntry; active: 
         transition: "background var(--dur) var(--ease), color var(--dur) var(--ease)",
         flexShrink: 0,
       }}
-      onMouseEnter={(e) => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "var(--text)"; } }}
+      onMouseEnter={(e) => { if (!active) { e.currentTarget.style.background = "var(--overlay-hover)"; e.currentTarget.style.color = "var(--text)"; } }}
       onMouseLeave={(e) => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-muted)"; } }}
     >
       <Icon size={17} />
@@ -131,7 +131,7 @@ export function AppShell({ user, rights, children }: AppShellProps) {
         {/* Sidebar */}
         <aside style={{
           width: collapsed ? 60 : 252, flexShrink: 0,
-          background: "linear-gradient(180deg, var(--bg-elevated) 0%, #0d1424 100%)",
+          background: "linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-base) 100%)",
           borderRight: "1px solid var(--border)",
           padding: collapsed ? "1.1rem 0.75rem 1.5rem" : "1.25rem 0.875rem 1.5rem",
           display: "flex", flexDirection: "column",
@@ -151,7 +151,7 @@ export function AppShell({ user, rights, children }: AppShellProps) {
                 display: "grid", placeItems: "center", flexShrink: 0,
                 transition: "background var(--dur) var(--ease), color var(--dur) var(--ease)",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "var(--text)"; }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--overlay-hover)"; e.currentTarget.style.color = "var(--text)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-subtle)"; }}
             >
               {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -226,7 +226,7 @@ export function AppShell({ user, rights, children }: AppShellProps) {
 
         {/* Main area */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, transition: "margin-left 220ms cubic-bezier(0.4,0,0.2,1)" }}>
-          <header style={{ height: "var(--topbar-h)", flexShrink: 0, background: "rgba(17,24,39,0.75)", backdropFilter: "var(--blur)", WebkitBackdropFilter: "var(--blur)", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 1.25rem", position: "sticky", top: 0, zIndex: 10 }}>
+          <header style={{ height: "var(--topbar-h)", flexShrink: 0, background: "var(--glass-bg)", backdropFilter: "var(--blur)", WebkitBackdropFilter: "var(--blur)", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 1.25rem", position: "sticky", top: 0, zIndex: 10 }}>
             <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>
               <strong style={{ color: "var(--text-subtle)", fontWeight: 600 }}>Branch</strong> · {user.branchName}
             </div>

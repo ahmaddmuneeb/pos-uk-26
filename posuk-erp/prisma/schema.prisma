@@ -34,6 +34,7 @@ model User {
   branchId      String
   status        String               @default("Active")
   mustChangePwd Boolean              @default(false)
+  theme         String               @default("light")
   lastLogin     DateTime?
   createdAt     DateTime             @default(now())
   activities    ActivityLog[]

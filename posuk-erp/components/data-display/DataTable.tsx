@@ -63,7 +63,7 @@ export function DataTable<T = Record<string, unknown>>({ columns, rows, rowKey, 
             <tr><td colSpan={columns.length} style={{ padding: "2rem 0.5rem", textAlign: "center", color: "var(--text-subtle)" }}>{empty}</td></tr>
           ) : pageRows.map((r, i) => (
             <tr key={rowKey ? rowKey(r, i + start) : i + start} style={{ transition: "background var(--dur-fast) var(--ease)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLTableRowElement).style.background = "rgba(255,255,255,0.02)"; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLTableRowElement).style.background = "var(--overlay-subtle)"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.background = ""; }}>
               {columns.map((c) => (
                 <td key={c.key} style={{ textAlign: c.align || "left", padding: "0.55rem 0.75rem", borderBottom: i === pageRows.length - 1 ? "none" : "1px solid var(--border)", color: "var(--text-muted)", whiteSpace: c.width ? "nowrap" : undefined }}>

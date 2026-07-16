@@ -22,7 +22,7 @@ export function IconButton({ label, size = "md", children, style, ...rest }: Ico
         }}
         onMouseEnter={(e) => {
           setHovered(true);
-          e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+          e.currentTarget.style.background = "var(--overlay-hover)";
           e.currentTarget.style.color = "var(--text)";
         }}
         onMouseLeave={(e) => {
@@ -40,8 +40,8 @@ export function IconButton({ label, size = "md", children, style, ...rest }: Ico
           bottom: "calc(100% + 6px)",
           left: "50%",
           transform: "translateX(-50%)",
-          background: "var(--surface-raised, #1e293b)",
-          color: "var(--text, #f1f5f9)",
+          background: "var(--surface-raised)",
+          color: "var(--text)",
           fontSize: "0.7rem",
           fontWeight: 600,
           whiteSpace: "nowrap",

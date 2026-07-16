@@ -33,7 +33,7 @@ export function Button({ variant = "primary", size = "md", block = false, disabl
   };
   return (
     <button disabled={disabled} style={{ ...base, ...variants[variant], ...style }}
-      onMouseEnter={(e) => { if (disabled) return; const t = e.currentTarget; if (variant === "primary") t.style.boxShadow = "var(--glow-primary-hover)"; else t.style.background = "rgba(255,255,255,0.06)"; }}
+      onMouseEnter={(e) => { if (disabled) return; const t = e.currentTarget; if (variant === "primary") t.style.boxShadow = "var(--glow-primary-hover)"; else t.style.background = "var(--overlay-hover)"; }}
       onMouseLeave={(e) => { const t = e.currentTarget; t.style.boxShadow = variant === "primary" ? "var(--glow-primary)" : "none"; t.style.background = variants[variant].background as string; }}
       {...rest}>{children}</button>
   );

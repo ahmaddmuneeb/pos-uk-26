@@ -11,7 +11,7 @@ export function NavItem({ active, children, onClick, style }: NavItemProps) {
       color: active ? "var(--accent)" : "var(--text-muted)", fontSize: "var(--fs-base)", fontWeight: active ? 600 : 500,
       cursor: "pointer", textAlign: "left", transition: "background var(--dur) var(--ease), color var(--dur) var(--ease)", ...style,
     }}
-      onMouseEnter={(e) => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "var(--text)"; } }}
+      onMouseEnter={(e) => { if (!active) { e.currentTarget.style.background = "var(--overlay-subtle)"; e.currentTarget.style.color = "var(--text)"; } }}
       onMouseLeave={(e) => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-muted)"; } }}>
       {children}
     </button>

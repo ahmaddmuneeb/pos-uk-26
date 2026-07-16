@@ -15,6 +15,7 @@ declare module "next-auth" {
       roleId: string;
       branchId: string;
       branchName: string;
+      theme: string;
     };
   }
   interface User {
@@ -25,6 +26,7 @@ declare module "next-auth" {
     roleId: string;
     branchId: string;
     branchName: string;
+    theme: string;
   }
 }
 
@@ -37,6 +39,7 @@ declare module "next-auth/jwt" {
     roleId: string;
     branchId: string;
     branchName: string;
+    theme: string;
   }
 }
 
@@ -67,18 +70,20 @@ const authConfig: NextAuthConfig = {
           roleId: user.roleId,
           branchId: user.branchId,
           branchName: user.branch.name,
+          theme: user.theme,
         };
       },
     }),
   ],
   session: { strategy: "jwt" },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) Object.assign(token, user);
+      if (trigger === "update" && session?.theme) token.theme = session.theme;
       return token;
     },
     async session({ session, token }) {
-      session.user = { id: token.id, username: token.username, fullName: token.fullName, role: token.role, roleId: token.roleId, branchId: token.branchId, branchName: token.branchName };
+      session.user = { id: token.id, username: token.username, fullName: token.fullName, role: token.role, roleId: token.roleId, branchId: token.branchId, branchName: token.branchName, theme: token.theme };
       return session;
     },
   },

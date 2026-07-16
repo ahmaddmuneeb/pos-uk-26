@@ -3,7 +3,8 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { User, KeyRound, LogOut, ChevronDown } from "lucide-react";
+import { User, KeyRound, LogOut, ChevronDown, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/components/theme/ThemeProvider";
 
 interface Me { fullName: string; email: string | null; role: { name: string }; branch: { name: string } }
 
@@ -18,6 +19,7 @@ export function ProfileDropdown({ user }: { user: { fullName: string; role: stri
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { theme, setTheme } = useTheme();
 
   // Live-sync name/initials from /api/me so profile edits reflect immediately
   const { data: me } = useQuery<Me>({
@@ -44,7 +46,7 @@ export function ProfileDropdown({ user }: { user: { fullName: string; role: stri
       <button
         onClick={() => setOpen((o) => !o)}
         style={{ display: "flex", alignItems: "center", gap: "0.625rem", background: "transparent", border: "1px solid transparent", borderRadius: "var(--radius-sm)", padding: "0.3rem 0.5rem", cursor: "pointer", transition: "border-color 120ms, background 120ms" }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "var(--overlay-subtle)"; }}
         onMouseLeave={(e) => { e.currentTarget.style.borderColor = "transparent"; e.currentTarget.style.background = "transparent"; }}
       >
         <span style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--primary)", display: "grid", placeItems: "center", fontSize: "0.72rem", fontWeight: 700, color: "#fff", flexShrink: 0 }}>{initials}</span>
@@ -62,12 +64,35 @@ export function ProfileDropdown({ user }: { user: { fullName: string; role: stri
             <p style={{ margin: 0, fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>{displayRole} · {displayBranch}</p>
           </div>
           <div style={{ height: 1, background: "var(--border)", margin: "0.25rem 0" }} />
-          <button style={menuItem} onClick={() => go("/profile")} onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")} onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+          <button style={menuItem} onClick={() => go("/profile")} onMouseEnter={(e) => (e.currentTarget.style.background = "var(--overlay-hover)")} onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
             <User size={14} style={{ color: "var(--text-subtle)", flexShrink: 0 }} /> My Profile
           </button>
-          <button style={menuItem} onClick={() => go("/profile#password")} onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")} onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+          <button style={menuItem} onClick={() => go("/profile#password")} onMouseEnter={(e) => (e.currentTarget.style.background = "var(--overlay-hover)")} onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
             <KeyRound size={14} style={{ color: "var(--text-subtle)", flexShrink: 0 }} /> Change Password
           </button>
+          <div style={{ height: 1, background: "var(--border)", margin: "0.25rem 0" }} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.4rem 0.75rem", gap: 10 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: "var(--fs-sm)", color: "var(--text)" }}>
+              {theme === "dark" ? <Moon size={14} style={{ color: "var(--text-subtle)", flexShrink: 0 }} /> : <Sun size={14} style={{ color: "var(--text-subtle)", flexShrink: 0 }} />}
+              Appearance
+            </span>
+            <div style={{ display: "flex", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", overflow: "hidden" }}>
+              <button
+                onClick={() => setTheme("light")}
+                title="Light theme"
+                style={{ border: "none", padding: "0.25rem 0.5rem", cursor: "pointer", background: theme === "light" ? "var(--overlay-active)" : "transparent", color: theme === "light" ? "var(--accent)" : "var(--text-subtle)", display: "grid", placeItems: "center" }}
+              >
+                <Sun size={13} />
+              </button>
+              <button
+                onClick={() => setTheme("dark")}
+                title="Dark theme"
+                style={{ border: "none", borderLeft: "1px solid var(--border)", padding: "0.25rem 0.5rem", cursor: "pointer", background: theme === "dark" ? "var(--overlay-active)" : "transparent", color: theme === "dark" ? "var(--accent)" : "var(--text-subtle)", display: "grid", placeItems: "center" }}
+              >
+                <Moon size={13} />
+              </button>
+            </div>
+          </div>
           <div style={{ height: 1, background: "var(--border)", margin: "0.25rem 0" }} />
           <button style={{ ...menuItem, color: "var(--danger)" }} onClick={() => signOut({ callbackUrl: "/login" })} onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(248,113,113,0.08)")} onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
             <LogOut size={14} style={{ flexShrink: 0 }} /> Log out

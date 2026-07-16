@@ -1,11 +1,13 @@
 "use client";
 import { Toaster, toast } from "sonner";
+import { useTheme } from "@/components/theme/ThemeProvider";
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const { theme } = useTheme();
   return (
     <>
       {children}
-      <Toaster position="bottom-right" richColors theme="dark" closeButton />
+      <Toaster position="bottom-right" richColors theme={theme} closeButton />
     </>
   );
 }

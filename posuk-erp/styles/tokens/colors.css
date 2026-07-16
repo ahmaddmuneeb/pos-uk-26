@@ -1,13 +1,76 @@
 /* ——— Colors ———
-   POS UK is a single dark theme. A deep navy canvas with layered
-   elevated surfaces, a cyan→blue accent, and slate-grey text ramp. */
-:root {
+   POS UK ships light and dark themes off the same semantic tokens.
+   Light is the default canvas; dark overrides via [data-theme='dark'].
+   A cyan→blue accent and slate-grey text ramp carry through both. */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* Base canvas + elevation ladder */
+  --bg-base: #f4f6fb;            /* app background (deepest) */
+  --bg-elevated: #ffffff;        /* sidebar / topbar */
+  --bg-surface: #ffffff;         /* inputs, modal body */
+  --bg-card: rgba(15, 23, 42, 0.03); /* translucent card fill */
+  --bg-card-solid: #ffffff;      /* solid card fill */
+  --surface-raised: #eef2f9;     /* elevated chrome: tooltips, sidebar gradient stop */
+
+  /* Borders */
+  --border: rgba(15, 23, 42, 0.10);           /* default hairline */
+  --border-strong: rgba(8, 145, 178, 0.28);   /* accented / active */
+
+  /* Text ramp (dark-on-light) */
+  --text: #0f172a;        /* primary */
+  --text-muted: #475569;  /* secondary / labels */
+  --text-subtle: #64748b; /* tertiary / placeholder, captions */
+
+  /* Accent (cyan) */
+  --accent: #0891b2;
+  --accent-dim: #0e7490;
+  --accent-glow: rgba(8, 145, 178, 0.15);
+
+  /* Brand gradient — the signature cyan→blue used on marks & primary buttons */
+  --primary: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); /* @kind color */
+  --grad-cyan: #06b6d4;
+  --grad-blue: #3b82f6;
+
+  /* Semantic status */
+  --success: #059669;
+  --success-bg: rgba(5, 150, 105, 0.10);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.10);
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.08);
+  --info: #0891b2;
+  --info-bg: rgba(8, 145, 178, 0.08);
+
+  /* Overlay tints for hover/active/subtle backgrounds — dark tint on light canvas */
+  --overlay-subtle: rgba(15, 23, 42, 0.035);
+  --overlay-hover: rgba(15, 23, 42, 0.06);
+  --overlay-active: rgba(15, 23, 42, 0.10);
+
+  /* Translucent chrome over backdrop-blur (topbar glass) */
+  --glass-bg: rgba(255, 255, 255, 0.75);
+
+  /* ——— Semantic aliases (use these in product code) ——— */
+  --surface-app: var(--bg-base);
+  --surface-card: var(--bg-card-solid);
+  --surface-input: var(--bg-surface);
+  --text-body: var(--text);
+  --text-label: var(--text-muted);
+  --text-placeholder: var(--text-subtle);
+  --focus-ring: var(--accent-glow);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
   /* Base canvas + elevation ladder */
   --bg-base: #0c1222;            /* app background (deepest) */
   --bg-elevated: #111827;        /* sidebar / topbar */
   --bg-surface: #151f32;         /* inputs, modal body */
   --bg-card: rgba(255, 255, 255, 0.04); /* translucent card fill */
   --bg-card-solid: #1a2438;      /* solid card fill */
+  --surface-raised: #1e293b;     /* elevated chrome: tooltips, sidebar gradient stop */
 
   /* Borders */
   --border: rgba(148, 163, 184, 0.12);        /* default hairline */
@@ -37,6 +100,14 @@
   --danger-bg: rgba(248, 113, 113, 0.12);
   --info: #22d3ee;
   --info-bg: rgba(34, 211, 238, 0.10);
+
+  /* Overlay tints for hover/active/subtle backgrounds — light tint on dark canvas */
+  --overlay-subtle: rgba(255, 255, 255, 0.03);
+  --overlay-hover: rgba(255, 255, 255, 0.06);
+  --overlay-active: rgba(255, 255, 255, 0.10);
+
+  /* Translucent chrome over backdrop-blur (topbar glass) */
+  --glass-bg: rgba(17, 24, 39, 0.75);
 
   /* ——— Semantic aliases (use these in product code) ——— */
   --surface-app: var(--bg-base);
