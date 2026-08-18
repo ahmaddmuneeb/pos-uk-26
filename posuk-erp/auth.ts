@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import type { NextAuthConfig } from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
@@ -83,7 +84,14 @@ const authConfig: NextAuthConfig = {
       return token;
     },
     async session({ session, token }) {
-      session.user = { id: token.id, username: token.username, fullName: token.fullName, role: token.role, roleId: token.roleId, branchId: token.branchId, branchName: token.branchName, theme: token.theme };
+      session.user.id = token.id;
+      session.user.username = token.username;
+      session.user.fullName = token.fullName;
+      session.user.role = token.role;
+      session.user.roleId = token.roleId;
+      session.user.branchId = token.branchId;
+      session.user.branchName = token.branchName;
+      session.user.theme = token.theme;
       return session;
     },
   },

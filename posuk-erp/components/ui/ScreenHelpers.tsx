@@ -169,7 +169,7 @@ export function ListScreen<T extends Record<string, unknown>>({ title, addLabel,
 
   const allColumns: Column<T>[] = (onEdit || onDelete || true)
     ? [...columns, {
-        key: "__actions" as keyof T,
+        key: "__actions",
         header: "Actions",
         width: "25%",
         align: "right" as const,

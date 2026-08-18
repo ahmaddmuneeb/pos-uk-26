@@ -1,5 +1,7 @@
 import { db } from "./db";
-import { Decimal } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+
+const Decimal = Prisma.Decimal;
 
 function sum(lines: { qty: number; rate: number; discount: number }[]) {
   return lines.reduce((acc, l) => {
